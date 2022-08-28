@@ -1,0 +1,62 @@
+#!/bin/bash
+# Script name: 	private
+# Purpose: 		Setting up the computer for development.
+# Date:			29/08/2022
+# This script is intended to work on Debian and its derivatives.
+# This script will install and modify a number of things.
+# It installs:
+#	- conky
+#	- conky-full
+#	- synaptic package manager
+#	- hardinfo
+#	- curl
+#	- redshift
+#	- menulibre
+#	- bleachbit
+#	- hexchat
+#	- inkscape
+#	- shellcheck
+#	- vim
+#	- vim-gtk
+#	- vim-gtk3
+#	- plank
+#	- python3
+#	- python3-pip
+#	- non free and missing drivers
+#
+# It will also try to download and install:
+#	- vscode
+#	- plugins to vscode
+#	- kite
+#
+# It will reconfigure:
+#	- vscode
+#	- vim
+#	- kite
+RED="\e[31m"
+GREEN="\e[32m"
+NC="\e[0m"
+
+declare -x os_version
+os_version=$(uname -r)
+declare -a apps=("conky" "conky-all"  "synaptic" "hardinfo" "redshift" "menulibre" "bleachbit" 
+				   "hexchat" "inkscape" "shellcheck" "vim" "vim-gtk" "vim-gtk3" "plank" "gparted"
+				   "python3" "python3-pip")
+declare -a result=()
+
+check_internet_con (){
+	ping -q -c1 google.com &>/dev/null || { echo "Error: Could not connect to internet."; exit 1;}
+}
+
+install_missing_drivers () {
+	 apt install -y --reinstall linux-modules-{,extras-}"${os_version}"
+	 apt install -y linux-firmware-nonfree
+}
+
+install_apps () {
+	apt update
+	for app in "${apps[@]}";
+	do
+		apt install -u -- $app && 
+	done
+}
