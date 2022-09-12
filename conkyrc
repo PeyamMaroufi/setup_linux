@@ -1,0 +1,134 @@
+--[[
+Conky, a system monitor, based on torsmo
+
+Any original torsmo code is licensed under the BSD license
+
+All code written since the fork of torsmo is licensed under the GPL
+
+Please see COPYING for details
+
+Copyright (c) 2004, Hannu Saransaari and Lauri Hakkarainen
+Copyright (c) 2005-2019 Brenden Matthews, Philip Kovacs, et. al. (see AUTHORS)
+All rights reserved.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+]]
+
+conky.config = {
+    alignment = 'tr',
+    background = false,
+    border_width = 1,
+    cpu_avg_samples = 2,
+    default_color = 'white',
+    default_outline_color = 'white',
+    default_shade_color = 'white',
+    double_buffer = true,
+    draw_borders = false,
+    draw_graph_borders = true,
+    draw_outline = false,
+    draw_shades = false,
+    extra_newline = false,
+    font = 'DejaVu Sans Mono:size=7',
+    gap_x = 60,
+    gap_y = 30,
+    minimum_height = 600,
+    minimum_width = 200,
+    net_avg_samples = 2,
+    no_buffers = true,
+    out_to_console = false,
+    out_to_ncurses = false,
+    out_to_stderr = false,
+    out_to_x = true,
+	own_window = true,
+    own_window_transparent = true,
+    own_window_argb_visual = true,
+    own_window_class = 'Conky',
+    own_window_type = 'normal',
+	own_window_hints = 'below,undecorated,sticky,skip_taskbar,skip_pager',
+    show_graph_range = false,
+    show_graph_scale = false,
+    stippled_borders = 0,
+    update_interval = 4.0,
+    uppercase = false,
+    use_spacer = 'none',
+    use_xft = true,
+}
+
+conky.text = [[
+${voffset 2}${font OpenLogos:size=13}u${font}   Kernel:  ${alignr}${kernel}
+${font StyleBats:size=13}A${font}   CPU1: ${cpu cpu0}% ${alignr}${cpubar cpu0 8,60}
+${font StyleBats:size=13}A${font}   CPU2: ${cpu cpu1}% ${alignr}${cpubar cpu1 8,60}
+${font StyleBats:size=13}A${font}   CPU3: ${cpu cpu2}% ${alignr}${cpubar cpu2 8,60}
+${font StyleBats:size=13}A${font}   CPU4: ${cpu cpu3}% ${alignr}${cpubar cpu3 8,60}
+${font StyleBats:size=13}A${font}   CPU5: ${cpu cpu4}% ${alignr}${cpubar cpu4 8,60}
+${font StyleBats:size=13}A${font}   CPU6: ${cpu cpu5}% ${alignr}${cpubar cpu5 8,60}
+${font StyleBats:size=13}A${font}   CPU7: ${cpu cpu6}% ${alignr}${cpubar cpu6 8,60}
+${font StyleBats:size=13}A${font}   CPU8: ${cpu cpu7}% ${alignr}${cpubar cpu7 8,60}
+${font StyleBats:size=13}A${font}   CPU9: ${cpu cpu8}% ${alignr}${cpubar cpu8 8,60}
+${font StyleBats:size=13}A${font}   CPU10: ${cpu cpu9}% ${alignr}${cpubar cpu9 8,60}
+${font StyleBats:size=13}A${font}   CPU11: ${cpu cpu10}% ${alignr}${cpubar cpu10 8,60}
+${font StyleBats:size=13}A${font}   CPU12: ${cpu cpu11}% ${alignr}${cpubar cpu11 8,60}
+${font StyleBats:size=13}g${font}   RAM: $memperc% ${alignr}${membar 8,60}
+${font StyleBats:size=13}j${font}   SWAP: $swapperc% ${alignr}${swapbar 8,60}
+${font StyleBats:size=13}A${font}   Temp CPU1:${alignr}${execi 120 sensors | grep 'Core 0' | awk '{print $3}' | cut -c2-3}°C
+${font StyleBats:size=13}A${font}   Temp CPU2:${alignr}${execi 120 sensors | grep 'Core 1' | awk '{print $3}' | cut -c2-3}°C
+${font StyleBats:size=13}A${font}   Temp CPU3:${alignr}${execi 120 sensors | grep 'Core 2' | awk '{print $3}' | cut -c2-3}°C
+${font StyleBats:size=13}A${font}   Temp CPU4:${alignr}${execi 120 sensors | grep 'Core 3' | awk '{print $3}' | cut -c2-3}°C
+${font StyleBats:size=13}A${font}   Temp CPU5:${alignr}${execi 120 sensors | grep 'Core 4' | awk '{print $3}' | cut -c2-3}°C
+${font StyleBats:size=13}A${font}   Temp CPU6:${alignr}${execi 120 sensors | grep 'Core 5' | awk '{print $3}' | cut -c2-3}°C
+${font StyleBats:size=13}q${font}   Uptime: ${alignr}${uptime}
+${font StyleBats:size=13}k${font}   Processes: ${alignr}$processes ($running_processes running)
+$hr
+${top name 1}$alignr${top cpu 1}${top mem 1}
+${top name 2}$alignr${top cpu 2}${top mem 2}
+${top name 3}$alignr${top cpu 3}${top mem 3}
+${top name 4}$alignr${top cpu 4}${top mem 4}
+$hr
+Home:
+${voffset 4}${fs_free /home}/${fs_size /home} ${alignr}${fs_bar 8,60 /home}
+
+$hr
+${font DejaVu Sans Mono:size=26}${alignc}${time %H:%M:%S}${font}
+
+${font DejaVu Sans:size=12}${alignc}${time %d-%m-%Y}${font}
+
+${font DejaVu Sans Mono:size=8}${alignc}${time %a}${font}
+$hr
+${if_existing /proc/net/route wlp112s0}
+${voffset -6}${font PizzaDude Bullets:size=11}O${font}   U: ${upspeed wlp112s0}${alignr}${upspeedgraph wlp112s0 8,60}
+${voffset 4}${font PizzaDude Bullets:size=11}U${font}   D: ${downspeed wlp112s0}${alignr}${downspeedgraph wlp112s0 8,60}
+${voffset 4}${font PizzaDude Bullets:size=11}N${font}   Upload: ${alignr}${totalup wlp112s0}
+${voffset 4}${font PizzaDude Bullets:size=11}T${font}   Download: ${alignr}${totaldown wlp112s0}
+${voffset 4}${font PizzaDude Bullets:size=11}Z${font}   Signal: ${wireless_link_qual wlp112s0}% ${alignr}${wireless_link_bar 8,60 wlp112s0}
+${voffset 4}${font PizzaDude Bullets:size=11}a${font}   Local Ip: ${alignr}${addr wlp112s0}
+${else}
+${if_existing /proc/net/route enxf8b46a9f883c}
+${voffset -6}${font PizzaDude Bullets:size=11}O${font}   U: ${upspeed enxf8b46a9f883c}${alignr}${upspeedgraph enxf8b46a9f883c 8,60}
+${voffset 4}${font PizzaDude Bullets:size=11}U${font}   D: ${downspeed enxf8b46a9f883c}${alignr}${downspeedgraph enxf8b46a9f883c 8,60}
+${voffset 4}${font PizzaDude Bullets:size=11}N${font}   Upload: ${alignr}${totalup enxf8b46a9f883c}
+${voffset 4}${font PizzaDude Bullets:size=11}T${font}   Download: ${alignr}${totaldown enxf8b46a9f883c}
+${voffset 4}${font PizzaDude Bullets:size=11}a${font}   Local Ip: ${alignr}${addr enxf8b46a9f883c}
+${else}
+${if_existing /proc/net/route blabla}
+${voffset -6}${font PizzaDude Bullets:size=11}O${font}   U: ${upspeed eth1}${alignr}${upspeedgraph eth1 8,60}
+${voffset 4}${font PizzaDude Bullets:size=11}U${font}   D: ${downspeed eth1}${alignr}${downspeedgraph eth1 8,60}
+${voffset 4}${font PizzaDude Bullets:size=11}N${font}   Upload: ${alignr}${totalup eth1}
+${voffset 4}${font PizzaDude Bullets:size=11}T${font}   Download: ${alignr}${totaldown eth1}
+${voffset 4}${font PizzaDude Bullets:size=11}a${font}   Local Ip: ${alignr}${addr eth1}
+${else}
+${font PizzaDude Bullets:size=14}4${font}   Network Unavailable
+${endif}
+${endif}
+${endif}
+
+]]
