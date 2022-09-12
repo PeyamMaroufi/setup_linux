@@ -11,7 +11,7 @@ declare -A apps=(["python3"]="" ["python3-pip"]="" ["synaptic"]="" ["redshift"]=
 
 declare -A vscode_plugs=(["ms-azuretools.vscode-docker"]="" ["streetsidesoftware.code-spell-checker"]="" ["idleberg.hopscotch"]="" ["ms-python.python"]=""
     ["timonwong.shellcheck"]="" ["redhat.vscode-yaml"]="" ["shardulm94.trailing-spaces"]="")
-	
+
 declare -A yocto_libs=(["gawk"]="" ["wget"]="" ["git-core"]="" ["diffstat"]="" ["unzip"]="" ["texinfo"]="" ["gcc-multilib"]="" ["build-essential"]="" ["chrpath"]="" ["socat"]="" ["libsdl1.2-dev"]="" ["xterm"]="" ["make"]="" ["xsltproc"]="" ["docbook-utils"]="" ["fop"]="" ["dblatex"]="" ["xmlto"]="" ["autoconf"]="" ["automake"]="" ["libtool"]="" ["libglib2.0-dev"]="" ["python"]="" ["bsdmainutils"]="" ["screen"]="")
 
 
@@ -63,6 +63,39 @@ install_python_pkgs() {
     done
 }
 
+install_theme() {
+	if curl -s https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/main/148144-prelude-dfr-0.5.tar.tar --create-dirs -o ~/.themes/148144-prelude-dfr-0.5.tar.tar; then
+		tar -xf ~/.themes/148144-prelude-dfr-0.5.tar.tar  &> /dev/null && rm ~/.themes/148144-prelude-dfr-0.5.tar.tar &> /dev/null
+		echo "Prelude theme is installed."
+	else
+		echo "Could not install Prelude theme."
+	fi
+}
+
+configure_conky() {
+	if curl -s  http://drive.noobslab.com/data/conky/start-conky -o ~/.start_conky; then
+		chmod +x ~/.start-conky
+		echo "Conky start script is created and exceptionable."
+
+	else
+		echo "Could not create a executionable Conky start script."
+	fi
+
+	if curl -s  http://drive.noobslab.com/data/conky/Hardy/hardy-conky-gmo.zip -o ~/hardy-conky-gmo.zip; then
+		unzip -q ~/hardy-conky-gmo.zip && rm ~/hardy-conky-gmo.zip
+		echo "Downloaded the fonts and symbols for conky theme."
+	else
+		echo "Could not download the fonts and symbols for conky theme."
+		return 1
+	fi
+	if curl -s https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/main/conkyrc -o ~/.conkyrc; then
+		echo "New conkyrc file is now available in home directory."
+	else
+		echo "Could not download conkyrc. Proceeding with the default one."
+		return 1
+	fi
+
+}
 install_vim_plugs() {
     vim_plug="https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim"
     vimrc_file="https://raw.githubusercontent.com/PeyamMaroufi/myvimrc/master/vimrc"
@@ -106,12 +139,12 @@ print_results() {
     printf '%s\n' "${!yocto_libs[@]}" "${yocto_libs[@]}" | pr -2t
 }
 
-while getopts 'ayp' option; do
+while getopts 'ayptc' option; do
 	case "$option" in
 		a)
 			if [[ "$EUID" = 0 ]]; then
 				install_apps
-			else 
+			else
 				echo "You don't have enough permission to install applications"
 			fi
 			;;
@@ -127,6 +160,12 @@ while getopts 'ayp' option; do
 			install_vscode_plugs
 			install_python_pkgs
 			install_vim_plugs
+			;;
+		t)
+			install_theme
+			;;
+		c)
+			configure_conky
 			;;
 		?)
 			echo "Script usage: $(basename \$0) [-a] [-y] [-p]" >&2
