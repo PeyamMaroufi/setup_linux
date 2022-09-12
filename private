@@ -1,62 +1,138 @@
 #!/bin/bash
-# Script name: 	private
-# Purpose: 		Setting up the computer for development.
-# Date:			29/08/2022
-# This script is intended to work on Debian and its derivatives.
-# This script will install and modify a number of things.
-# It installs:
-#	- conky
-#	- conky-full
-#	- synaptic package manager
-#	- hardinfo
-#	- curl
-#	- redshift
-#	- menulibre
-#	- bleachbit
-#	- hexchat
-#	- inkscape
-#	- shellcheck
-#	- vim
-#	- vim-gtk
-#	- vim-gtk3
-#	- plank
-#	- python3
-#	- python3-pip
-#	- non free and missing drivers
-#
-# It will also try to download and install:
-#	- vscode
-#	- plugins to vscode
-#	- kite
-#
-# It will reconfigure:
-#	- vscode
-#	- vim
-#	- kite
-RED="\e[31m"
-GREEN="\e[32m"
-NC="\e[0m"
+# Name:     new_linux_setup
+# Purpose:  Install essential libraries for a native and VM Ubuntu distro
+#           to work properly with our development work.
+# Copyright:    NEVS AB
 
-declare -x os_version
-os_version=$(uname -r)
-declare -a apps=("conky" "conky-all"  "synaptic" "hardinfo" "redshift" "menulibre" "bleachbit" 
-				   "hexchat" "inkscape" "shellcheck" "vim" "vim-gtk" "vim-gtk3" "plank" "gparted"
-				   "python3" "python3-pip")
-declare -a result=()
+declare -A apps=(["python3"]="" ["python3-pip"]="" ["synaptic"]="" ["redshift"]="" ["shellcheck"]="" ["bleachbit"]=""
+    ["vim"]="" ["vim-gtk"]="" ["vim-gtk3"]="" ["gparted"]="" ["build-essential"]="" ["make"]="" ["perl"]=""
+    ["bluez"]="" ["blueman"]="" ["curl"]="" ["terminator"]="" ["fonts-firacode"]="" ["guvcview"]="" ["wget"]=""
+    ["gpg"]="" ["apt-transport-https"]="" ["git"]="")
 
-check_internet_con (){
-	ping -q -c1 google.com &>/dev/null || { echo "Error: Could not connect to internet."; exit 1;}
+declare -A vscode_plugs=(["ms-azuretools.vscode-docker"]="" ["streetsidesoftware.code-spell-checker"]="" ["idleberg.hopscotch"]="" ["ms-python.python"]=""
+    ["timonwong.shellcheck"]="" ["redhat.vscode-yaml"]="" ["shardulm94.trailing-spaces"]="")
+	
+declare -A yocto_libs=(["gawk"]="" ["wget"]="" ["git-core"]="" ["diffstat"]="" ["unzip"]="" ["texinfo"]="" ["gcc-multilib"]="" ["build-essential"]="" ["chrpath"]="" ["socat"]="" ["libsdl1.2-dev"]="" ["xterm"]="" ["make"]="" ["xsltproc"]="" ["docbook-utils"]="" ["fop"]="" ["dblatex"]="" ["xmlto"]="" ["autoconf"]="" ["automake"]="" ["libtool"]="" ["libglib2.0-dev"]="" ["python"]="" ["bsdmainutils"]="" ["screen"]="")
+
+
+declare -A python_pkgs=(["autopep8"]="" ["pylint"]="")
+declare -A vims=(["vim_plugin"]="" ["vim_rc"]="")
+
+install_apps() {
+    read -p "This script will install ${#apps[@]} applications. Press enter to continue."
+    apt update
+    for app in "${!apps[@]}"; do
+        if apt -y install -- "$app"; then
+            apps[$app]="OK"
+        else
+            apps[$app]="FAIL"
+        fi
+    done
 }
 
-install_missing_drivers () {
-	 apt install -y --reinstall linux-modules-{,extras-}"${os_version}"
-	 apt install -y linux-firmware-nonfree
+install_vscode() {
+    if ! hash code 2>/dev/null; then
+        wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor >packages.microsoft.gpg
+        install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+        echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" >/etc/apt/sources.list.d/vscode.list
+        rm -f packages.microsoft.gpg
+        apt update
+        apt -y install code
+    fi
 }
 
-install_apps () {
-	apt update
-	for app in "${apps[@]}";
-	do
-		apt install -u -- $app && 
+install_vscode_plugs() {
+    if hash code 2>/dev/null; then
+        for plug in "${!vscode_plugs[@]}"; do
+            if code --install-extension "$plug" --force --user-data-dir ~/.vscode 2>/dev/null; then
+                vscode_plugs[$plug]="OK"
+            else
+                vscode_plugs[$plug]="FAIL"
+            fi
+        done
+    fi
+}
+
+install_python_pkgs() {
+    for pkg in "${!python_pkgs[@]}"; do
+        if pip3 install "$pkg"; then
+            python_pkgs[$pkg]="OK"
+        else
+            python_pkgs[$pkg]="FAIL"
+        fi
+    done
+}
+
+install_vim_plugs() {
+    vim_plug="https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim"
+    vimrc_file="https://raw.githubusercontent.com/PeyamMaroufi/myvimrc/master/vimrc"
+    if curl -sfLo ~/.vim/autoload/plug.vim --create-dirs "$vim_plug"; then
+        vims["vim_plugin"]="OK"
+        if curl -sfLo ~/.vimrc "$vimrc_file"; then
+            vims["vim_rc"]="OK"
+        else
+            vims["vim_rc"]="FAIL"
+        fi
+    else
+        vims["vim_plugin"]="FAIL"
+    fi
+}
+
+install_libraries_yocto () {
+	for lib in "${!yocto_libs[@]}"; do
+		if apt -y install -- "$lib"; then
+			yocto_libs[$lib]="OK"
+		else
+			yocto_libs[$lib]="FAIL"
+		fi
 	done
+
 }
+
+print_results() {
+	green="32"
+    bold="\e[1;${green}m"
+    no_style="\033[0m"
+    echo ""
+    echo -e "${bold}Application install status:${no_style}"
+    printf '%s\n' "${!apps[@]}" "${apps[@]}" | pr -2t
+    echo -e "${bold}Vscode plugins install status:${no_style}"
+    printf '%s\n' "${!vscode_plugs[@]}" "${vscode_plugs[@]}" | pr -2t
+    echo -e "${bold}Python package install status:${no_style}"
+    printf '%s\n' "${!python_pkgs[@]}" "${python_pkgs[@]}" | pr -2t
+    echo -e "${bold}Vim install status:${no_style}"
+    printf '%s\n' "${!vims[@]}" "${vims[@]}" | pr -2t
+    echo -e "${bold}Yocto libraries install status:${no_style}"
+    printf '%s\n' "${!yocto_libs[@]}" "${yocto_libs[@]}" | pr -2t
+}
+
+while getopts 'ayp' option; do
+	case "$option" in
+		a)
+			if [[ "$EUID" = 0 ]]; then
+				install_apps
+			else 
+				echo "You don't have enough permission to install applications"
+			fi
+			;;
+		y)
+			if [[ "$EUID" = 0 ]]; then
+				install_libraries_yocto
+			else
+				echo "You don't have enough permission to install Yocto's required libraries."
+			fi
+			;;
+		p)
+			install_vscode
+			install_vscode_plugs
+			install_python_pkgs
+			install_vim_plugs
+			;;
+		?)
+			echo "Script usage: $(basename \$0) [-a] [-y] [-p]" >&2
+			exit 1
+			;;
+	esac
+done
+shift "$(($OPTIND -1))"
+print_results
