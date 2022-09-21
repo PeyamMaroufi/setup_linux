@@ -1,0 +1,65 @@
+#! /bin/bash
+# Used to run my configuration in xfce4 environment for my home environment.
+# 1. Fonts are reduced.
+# 2. Set the external as default monitor.
+# 3. Kill plank and run it again.
+# 4. Reduce the conkyrc font.
+# 5. Conky x_padding set to 10.
+
+conkyrc_config() {
+
+	argument=$1
+	conkyrc="$HOME"/.conkyrc
+
+	if [[ "$1" = 1 ]]; then
+		new_gapx='gap_x = 10,'
+	else
+		new_gapx='gap_x = 60,'
+	fi
+	gap_x=$(grep 'gap_x' "$conkyrc") || { echo "Could not find gap_x in .conkyrc"; exit 1; }
+	sed -i "s/$gap_x/$new_gapx/g" "$conkyrc"
+	killall conky; conky -d
+}
+
+change_fontsize() {
+
+	argument="$1"
+	if [[ "$argument" = 1 ]]; then
+		xfconf-query -c xsettings -p /Gtk/FontName -s 'Sans 9'
+		xfconf-query -c xfce4-panel -p /panels/panel-1/size  -s 21
+	else
+		xfconf-query -c xsettings -p /Gtk/FontName -s 'Sans 14'
+		xfconf-query -c xfce4-panel -p /panels/panel-1/size  -s 28
+	fi
+	
+}
+
+terminal_font() {
+	argument=$1
+	config_file="$HOME"/.config/terminator/config
+	if [[ "$argument" = 1 ]]; then
+		f_size=' Terminus Medium 10'
+	else
+		f_size=' Terminus Medium 15'
+	fi
+	sed -i -E "s/^(\s*font =).*/\1 $f_size/" "$config_file"
+}
+
+
+while getopts "hw" option; do
+	case "$option" in
+		h) 
+			conkyrc_config 1
+			change_fontsize 1
+			terminal_font 1
+			;;
+		w)
+			conkyrc_config 0
+			change_fontsize 0
+			terminal_font 0
+			;;
+		?)
+			echo "Error: Use either -h or -w"
+			exit 1;
+	esac
+done
