@@ -19,7 +19,7 @@ declare -A python_pkgs=(["autopep8"]="" ["pylint"]="")
 declare -A vims=(["vim_plugin"]="" ["vim_rc"]="")
 
 install_apps() {
-    read -p "This script will install ${#apps[@]} applications. Press enter to continue."
+
     apt update
     for app in "${!apps[@]}"; do
         if apt -y install -- "$app"; then
@@ -31,20 +31,24 @@ install_apps() {
 }
 
 install_vscode() {
+
     if ! hash code 2>/dev/null; then
         wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor >packages.microsoft.gpg
         install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+		chattr -i /etc/apt/sources.list
         echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" >/etc/apt/sources.list.d/vscode.list
         rm -f packages.microsoft.gpg
+		chattr +i /etc/apt/sources.list
         apt update
         apt -y install code
     fi
 }
 
 install_vscode_plugs() {
+
     if hash code 2>/dev/null; then
         for plug in "${!vscode_plugs[@]}"; do
-            if code --install-extension "$plug" --force --user-data-dir ~/.vscode 2>/dev/null; then
+            if code --install-extension "$plug" --force --user-data-dir "$HOME"/.vscode 2>/dev/null; then
                 vscode_plugs[$plug]="OK"
             else
                 vscode_plugs[$plug]="FAIL"
@@ -54,6 +58,7 @@ install_vscode_plugs() {
 }
 
 install_python_pkgs() {
+
     for pkg in "${!python_pkgs[@]}"; do
         if pip3 install "$pkg"; then
             python_pkgs[$pkg]="OK"
@@ -64,8 +69,9 @@ install_python_pkgs() {
 }
 
 install_theme() {
-	if curl -s https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/main/148144-prelude-dfr-0.5.tar.tar --create-dirs -o ~/.themes/148144-prelude-dfr-0.5.tar.tar; then
-		tar -xf ~/.themes/148144-prelude-dfr-0.5.tar.tar  &> /dev/null && rm ~/.themes/148144-prelude-dfr-0.5.tar.tar &> /dev/null
+
+	if curl -s https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/main/148144-prelude-dfr-0.5.tar.tar --create-dirs -o "$HOME"/.themes/148144-prelude-dfr-0.5.tar.tar; then
+		tar -xf "$HOME"/.themes/148144-prelude-dfr-0.5.tar.tar  &> /dev/null && rm "$HOME"/.themes/148144-prelude-dfr-0.5.tar.tar &> /dev/null
 		echo "Prelude theme is installed."
 	else
 		echo "Could not install Prelude theme."
@@ -73,22 +79,23 @@ install_theme() {
 }
 
 configure_conky() {
-	if curl -s  http://drive.noobslab.com/data/conky/start-conky -o ~/.start_conky; then
-		chmod +x ~/.start-conky
+
+	if curl -s  http://drive.noobslab.com/data/conky/start-conky -o "$HOME"/.start_conky; then
+		chmod +x "$HOME"/.start-conky
 		echo "Conky start script is created and exceptionable."
 
 	else
 		echo "Could not create a executionable Conky start script."
 	fi
 
-	if curl -s  http://drive.noobslab.com/data/conky/Hardy/hardy-conky-gmo.zip -o ~/hardy-conky-gmo.zip; then
-		unzip -q ~/hardy-conky-gmo.zip && rm ~/hardy-conky-gmo.zip
+	if curl -s  http://drive.noobslab.com/data/conky/Hardy/hardy-conky-gmo.zip -o "$HOME"/hardy-conky-gmo.zip; then
+		unzip -q "$HOME"/hardy-conky-gmo.zip && rm "$HOME"/hardy-conky-gmo.zip
 		echo "Downloaded the fonts and symbols for conky theme."
 	else
 		echo "Could not download the fonts and symbols for conky theme."
 		return 1
 	fi
-	if curl -s https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/main/conkyrc -o ~/.conkyrc; then
+	if curl -s https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/main/conkyrc -o "$HOME"/.conkyrc; then
 		echo "New conkyrc file is now available in home directory."
 	else
 		echo "Could not download conkyrc. Proceeding with the default one."
@@ -96,10 +103,12 @@ configure_conky() {
 	fi
 
 }
+
 install_vim_plugs() {
+
     vim_plug="https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim"
     vimrc_file="https://raw.githubusercontent.com/PeyamMaroufi/myvimrc/master/vimrc"
-    if curl -sfLo ~/.vim/autoload/plug.vim --create-dirs "$vim_plug"; then
+    if curl -sfLo "$HOME"/.vim/autoload/plug.vim --create-dirs "$vim_plug"; then
         vims["vim_plugin"]="OK"
         if curl -sfLo ~/.vimrc "$vimrc_file"; then
             vims["vim_rc"]="OK"
@@ -112,6 +121,7 @@ install_vim_plugs() {
 }
 
 install_libraries_yocto () {
+
 	for lib in "${!yocto_libs[@]}"; do
 		if apt -y install -- "$lib"; then
 			yocto_libs[$lib]="OK"
@@ -123,6 +133,7 @@ install_libraries_yocto () {
 }
 
 print_results() {
+
 	green="32"
     bold="\e[1;${green}m"
     no_style="\033[0m"
@@ -139,10 +150,15 @@ print_results() {
     printf '%s\n' "${!yocto_libs[@]}" "${yocto_libs[@]}" | pr -2t
 }
 
-while getopts 'ayptc' option; do
+while getopts 'aypdtc' option; do
 	case "$option" in
 		a)
 			if [[ "$EUID" = 0 ]]; then
+				read -p "This script will install ${#apps[@]} applications. Press enter to continue."
+				i=0
+				for p in "${!apps[@]}"; do
+					echo "$(( i++ ))) $p"
+				done |xargs -L3 | column -t
 				install_apps
 			else
 				echo "You don't have enough permission to install applications"
@@ -150,13 +166,24 @@ while getopts 'ayptc' option; do
 			;;
 		y)
 			if [[ "$EUID" = 0 ]]; then
+				read -p "This script will install ${#yocto_libs[@]} applications. Press enter to continue."
+				i=0
+				for p in "${!yocto_libs[@]}"; do
+					echo "$(( i++ ))) $p"
+				done |xargs -L3 | column -t
 				install_libraries_yocto
 			else
 				echo "You don't have enough permission to install Yocto's required libraries."
 			fi
 			;;
+		d)
+			if [[ "$EUID" = 0 ]]; then
+				install_vscode
+			else
+				echo "You don't have enough permission to install vscode."
+			fi
+			;;
 		p)
-			install_vscode
 			install_vscode_plugs
 			install_python_pkgs
 			install_vim_plugs
@@ -168,7 +195,7 @@ while getopts 'ayptc' option; do
 			configure_conky
 			;;
 		?)
-			echo "Script usage: $(basename \$0) [-a] [-y] [-p]" >&2
+			echo "Script usage: $(basename \$0) [-a] [-y] [-p] [-d] [-p] [-t] [-c]" >&2
 			exit 1
 			;;
 	esac

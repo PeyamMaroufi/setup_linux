@@ -38,9 +38,9 @@ terminal_font() {
 	argument=$1
 	config_file="$HOME"/.config/terminator/config
 	if [[ "$argument" = 1 ]]; then
-		f_size=' Terminus Medium 10'
+		f_size='[ \t]font = Terminus Medium 10'
 	else
-		f_size=' Terminus Medium 15'
+		f_size='[ \t]font = Terminus Medium 15'
 	fi
 	sed -i -E "s/^(\s*font =).*/\1 $f_size/" "$config_file"
 }
