@@ -11,7 +11,7 @@ jobs:
           node-version: '14'
       - run: npm install -g bats
       - run: bats -v
-      - run: apt update && caat /etc/*release*
+      - run: sudo apt update && cat /etc/*release*
       - run: lscpu | egrep 'Model name|Socket|Thread|NUMA|CPU\(s\)'
 
 
