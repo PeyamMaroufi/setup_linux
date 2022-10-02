@@ -5,7 +5,7 @@ on:
   pull_request: ['main']
 
 jobs:
-  check-bats-version:
+  running-some-code:
     runs-on: ubuntu-latest
     steps:
       - run: lscpu | egrep 'Model name|Socket|Thread|NUMA|CPU\(s\)'
