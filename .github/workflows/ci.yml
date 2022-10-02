@@ -1,6 +1,9 @@
 name: stupid-ci-for-stupid-project 
 run-name: ${{ github.actor }} is mastering actions. 
-on: [push]
+on: 
+  branches: ['*']
+  pull_request: ['main']
+
 jobs:
   check-bats-version:
     runs-on: ubuntu-latest
