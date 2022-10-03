@@ -16,7 +16,7 @@ jobs:
       matrix:
         version: [5, 3]
     steps:
-      - uses: actions/checkout£v3
+      - uses: actions/checkout@v3
       - run: ./test_script ${{ matrix.version }}
 
 
