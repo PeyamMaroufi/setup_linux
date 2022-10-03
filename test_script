@@ -1,6 +1,6 @@
 #!/bin/bash
 # Test 1. Wrong argument
-./private -f &> /dev/null || echo -e "Test 1: successful."
+./private -f &> /dev/null || echo "Test 1: successful."
 
 # Test 2. Install applications
 if sudo ./private -a &> /dev/null; then
@@ -29,7 +29,7 @@ else
 fi
 
 # Test 4. Install theme
-if ./private -t; then
+if ./private -t &> /dev/null; then
     if [[ ! -d "$HOME"/.themes ]]; then
         echo "Test 4: Error - Didn't create the .themes folder"
         exit 1
