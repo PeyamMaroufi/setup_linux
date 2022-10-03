@@ -1,3 +1,27 @@
-#! /bin/bash
-sleep $1;
-echo "Slept $1 seconds"
+#!/bin/bash
+# Test 1. Wrong argument
+./private -f || echo -e "Test: successfull."
+
+# Test 2. Install applications
+if ./private -a; then
+    if [[ -z which shellcheck ]]; then
+        echo "Error: Shellcheck could not be found"
+        exit 1
+    fi
+fi
+
+# Test 3. Install yocto libraries
+if ./private -y; then
+    if [[ -z which python2 ]]; then
+        echo "Error: Python2 not found."
+        exit 1
+    fi
+fi
+
+# Test 4. Install theme
+if ./private -t; then
+    if [[ ! -d "$HOME"/.themes ]]; then
+        echo "Didn't create the .themes folder"
+        exit 1
+    fi
+fi

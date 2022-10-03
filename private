@@ -7,7 +7,7 @@
 declare -A apps=(["python3"]="" ["python3-pip"]="" ["synaptic"]="" ["redshift"]="" ["shellcheck"]="" ["bleachbit"]=""
     ["vim"]="" ["vim-gtk"]="" ["vim-gtk3"]="" ["gparted"]="" ["build-essential"]="" ["make"]="" ["perl"]=""
     ["bluez"]="" ["blueman"]="" ["curl"]="" ["terminator"]="" ["fonts-firacode"]="" ["guvcview"]="" ["wget"]=""
-    ["gpg"]="" ["apt-transport-https"]="" ["git"]="")
+    ["gpg"]="" ["apt-transport-https"]="" ["git"]="" ["fonts-ubuntu"]="")
 
 declare -A vscode_plugs=(["ms-azuretools.vscode-docker"]="" ["streetsidesoftware.code-spell-checker"]="" ["idleberg.hopscotch"]="" ["ms-python.python"]=""
     ["timonwong.shellcheck"]="" ["redhat.vscode-yaml"]="" ["shardulm94.trailing-spaces"]="")
@@ -70,8 +70,13 @@ install_python_pkgs() {
 
 install_theme() {
 
-	if curl -s https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/main/148144-prelude-dfr-0.5.tar.tar --create-dirs -o "$HOME"/.themes/148144-prelude-dfr-0.5.tar.tar; then
-		tar -xf "$HOME"/.themes/148144-prelude-dfr-0.5.tar.tar  &> /dev/null && rm "$HOME"/.themes/148144-prelude-dfr-0.5.tar.tar &> /dev/null
+	if [[ ! -d "$HOME"/.themes ]]; then
+		mkdir "$HOME"/.themes
+	fi
+
+	if curl -s https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/main/148144-prelude-dfr-0.5.tar.tar -o "$HOME"/.themes/148144-prelude-dfr-0.5.tar.tar; then
+		tar -xf "$HOME"/.themes/148144-prelude-dfr-0.5.tar.tar -C "$HOME"/.themes/ &> /dev/null || { echo "Error: Could not extract tar file."; exit 1 }
+		rm "$HOME"/.themes/148144-prelude-dfr-0.5.tar.tar &> /dev/null
 		echo "Prelude theme is installed."
 	else
 		echo "Could not install Prelude theme."
