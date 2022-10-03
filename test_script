@@ -1,9 +1,9 @@
 #!/bin/bash
 # Test 1. Wrong argument
-./private -f || echo -e "Test 1: successful."
+./private -f &> /dev/null || echo -e "Test 1: successful."
 
 # Test 2. Install applications
-if sudo ./private -a; then
+if sudo ./private -a &> /dev/null; then
     if [[ -z $(which shellcheck) ]]; then
         echo "Test 2: Error - Shellcheck could not be found"
         exit 1
@@ -16,7 +16,7 @@ else
 fi
 
 # Test 3. Install yocto libraries
-if ./private -y; then
+if sudo ./private -y &> /dev/null; then
     if [[ -z $(which python2) ]]; then
         echo "Test 3: Error - Python2 not found."
         exit 1
