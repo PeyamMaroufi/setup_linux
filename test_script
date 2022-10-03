@@ -3,7 +3,7 @@
 ./private -f || echo -e "Test 1: successful."
 
 # Test 2. Install applications
-if ./private -a; then
+if sudo ./private -a; then
     if [[ -z $(which shellcheck) ]]; then
         echo "Test 2: Error - Shellcheck could not be found"
         exit 1
