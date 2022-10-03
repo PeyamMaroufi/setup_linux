@@ -4,7 +4,7 @@
 
 # Test 2. Install applications
 if ./private -a; then
-    if [[ -z which shellcheck ]]; then
+    if [[ -z $(which shellcheck) ]]; then
         echo "Test 2: Error - Shellcheck could not be found"
         exit 1
     else
@@ -14,7 +14,7 @@ fi
 
 # Test 3. Install yocto libraries
 if ./private -y; then
-    if [[ -z which python2 ]]; then
+    if [[ -z $(which python2) ]]; then
         echo "Test 3: Error - Python2 not found."
         exit 1
     else
