@@ -12,12 +12,14 @@ conkyrc_config() {
 	conkyrc="$HOME"/.conkyrc
 
 	if [[ "$1" = 1 ]]; then
-		new_gapx='gap_x = 10,'
+		new_gapx='[ \t]gap_x = 10,'
+		new_font="[ \t]font = 'Terminus:size=8'"
 	else
-		new_gapx='gap_x = 60,'
+		new_gapx='[ \t]gap_x = 60,'
+		new_font="[ \t]font= 'Terminus:size=14'"
 	fi
-	gap_x=$(grep 'gap_x' "$conkyrc") || { echo "Could not find gap_x in .conkyrc"; exit 1; }
-	sed -i "s/$gap_x/$new_gapx/g" "$conkyrc"
+	sed -i -E "s/^(\s*gap_x =).*/\1 $new_gapx/" "$conkyrc"
+	sed -i -E "s/^(\s*font =).*/\1 $new_font/" "$conkyrc"
 	killall conky; conky -d
 }
 
