@@ -3,7 +3,7 @@
 # setup_linux
 A set up for my private machine.
 
-## Application:
+## Applications:
 * python3   
 * python3-pip   
 * synaptic   
