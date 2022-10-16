@@ -14,6 +14,7 @@ declare -A vscode_plugs=(["ms-azuretools.vscode-docker"]="" ["streetsidesoftware
 
 declare -A yocto_libs=(["gawk"]="" ["wget"]="" ["git-core"]="" ["diffstat"]="" ["unzip"]="" ["texinfo"]="" ["gcc-multilib"]="" ["build-essential"]="" ["chrpath"]="" ["socat"]="" ["libsdl1.2-dev"]="" ["xterm"]="" ["make"]="" ["xsltproc"]="" ["docbook-utils"]="" ["fop"]="" ["dblatex"]="" ["xmlto"]="" ["autoconf"]="" ["automake"]="" ["libtool"]="" ["libglib2.0-dev"]="" ["python"]="" ["bsdmainutils"]="" ["screen"]="")
 
+declare -A docker_libs=(["ca-certificates"]="" ["curl"]="" ["gnupg"]="" ["lsb-release"]="" ["docker-ce"]="" ["docker-ce-cli"]="" ["containerd.io"]="" ["docker-composer-plugin"]="")
 
 declare -A python_pkgs=(["autopep8"]="" ["pylint"]="")
 declare -A vims=(["vim_plugin"]="" ["vim_rc"]="")
@@ -66,6 +67,24 @@ install_python_pkgs() {
             python_pkgs[$pkg]="FAIL"
         fi
     done
+}
+
+install_docker() {
+	
+	mkdir -p /etc/apt/keyrings
+	if curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg; then
+		chmod a+r /etc/apt/keyrings/docker.gpg
+		echo  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+		apt update
+		for app in "${!docker_libs[@]}"; do
+			if apt -y install -- "$app"; then
+				docker_libs[$app]="OK"
+			else
+				docker_libs[$app]="FAIL"
+			fi
+		done
+	fi
+	chattr +i /etc/apt/sources.list
 }
 
 install_theme() {
@@ -153,57 +172,68 @@ print_results() {
     printf '%s\n' "${!vims[@]}" "${vims[@]}" | pr -2t
     echo -e "${bold}Yocto libraries install status:${no_style}"
     printf '%s\n' "${!yocto_libs[@]}" "${yocto_libs[@]}" | pr -2t
+    echo -e "${bold}Docker libraries install status:${no_style}"
+    printf '%s\n' "${!docker_libs[@]}" "${docker_libs[@]}" | pr -2t
 }
 
-while getopts 'aypdtc' option; do
-	case "$option" in
-		a)
-			if [[ "$EUID" = 0 ]]; then
-				read -p "This script will install ${#apps[@]} applications. Press enter to continue."
-				i=0
-				for p in "${!apps[@]}"; do
-					echo "$(( i++ ))) $p"
-				done |xargs -L3 | column -t
-				install_apps
-			else
-				echo "You don't have enough permission to install applications"
-			fi
-			;;
-		y)
-			if [[ "$EUID" = 0 ]]; then
-				read -p "This script will install ${#yocto_libs[@]} applications. Press enter to continue."
-				i=0
-				for p in "${!yocto_libs[@]}"; do
-					echo "$(( i++ ))) $p"
-				done |xargs -L3 | column -t
-				install_libraries_yocto
-			else
-				echo "You don't have enough permission to install Yocto's required libraries."
-			fi
-			;;
-		d)
-			if [[ "$EUID" = 0 ]]; then
-				install_vscode
-			else
-				echo "You don't have enough permission to install vscode."
-			fi
-			;;
-		p)
-			install_vscode_plugs
-			install_python_pkgs
-			install_vim_plugs
-			;;
-		t)
-			install_theme
-			;;
-		c)
-			configure_conky
-			;;
-		?)
-			echo "Script usage: $(basename \$0) [-a] [-y] [-p] [-d] [-p] [-t] [-c]" >&2
-			exit 1
-			;;
-	esac
-done
-shift "$(($OPTIND -1))"
-print_results
+case "$1" in
+	a|--apps)
+		if [[ "$EUID" = 0 ]]; then
+			read -p "This script will install ${#apps[@]} applications. Press enter to continue."
+			i=0
+			for p in "${!apps[@]}"; do
+				echo "$(( i++ ))) $p"
+			done |xargs -L3 | column -t
+			install_apps
+			print_results
+		else
+			echo "You don't have enough permission to install applications"
+		fi
+		;;
+	y|--yocto)
+		if [[ "$EUID" = 0 ]]; then
+			read -p "This script will install ${#yocto_libs[@]} applications. Press enter to continue."
+			i=0
+			for p in "${!yocto_libs[@]}"; do
+				echo "$(( i++ ))) $p"
+			done |xargs -L3 | column -t
+			install_libraries_yocto
+			print_results
+		else
+			echo "You don't have enough permission to install Yocto's required libraries."
+		fi
+		;;
+	d|--docker)
+		if [[ "$EUID" = 0 ]]; then
+			install_docker
+			print_results
+		else
+			echo "You don't have enough permission to install docker."
+		fi
+		;;	
+	s|--vscode)
+		if [[ "$EUID" = 0 ]]; then
+			install_vscode
+			print_results
+		else
+			echo "You don't have enough permission to install vscode."
+		fi
+		;;
+	p|--plugins)
+		install_vscode_plugs
+		install_python_pkgs
+		install_vim_plugs
+		print_results
+		;;
+	t|--theme)
+		install_theme
+		;;
+	c|--conky)
+		configure_conky
+		print_results
+		;;
+	*)
+		echo -e "Script usage: \n\t[a] or [--apps] To install needed applications.\n\t[y] or [--yocto] To install application needed by Yocto.\n\t[p] or [--plugins] To install Visual Code and Vim plugins.\n\t[d] or [--vscode] To install Visual Code.\n\t[t] or [--theme] To install Prelude theme on XFCE4.\n\t[c] or [--conky] To install and configure Conky." >&2
+		exit 1
+		;;
+esac
