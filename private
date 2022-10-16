@@ -84,7 +84,6 @@ install_docker() {
 			fi
 		done
 	fi
-	chattr +i /etc/apt/sources.list
 }
 
 install_theme() {
