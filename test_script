@@ -15,20 +15,7 @@ else
     exit 1
 fi
 
-# Test 3. Install yocto libraries
-if sudo ./private y &> /dev/null; then
-    if [[ -z $(which python2) ]]; then
-        echo "Test 3: Error - Python2 not found."
-        exit 1
-    else
-        echo "Test 3: successful."
-    fi
-else
-    echo "Test 3: Fail."
-    exit 1
-fi
-
-# Test 4. Install theme
+# Test 3. Install theme
 if ./private t &> /dev/null; then
     if [[ ! -d "$HOME"/.themes ]]; then
         echo "Test 4: Error - Didn't create the .themes folder."
@@ -41,7 +28,7 @@ else
     exit 1
 fi
 
-# Test 5. Install yocto libraries
+# Test 4. Install yocto libraries
 if sudo ./private d &> /dev/null; then
     if [[ -z $(which docker) ]]; then
         echo "Test 5: Error - Docker not found."

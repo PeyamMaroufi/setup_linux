@@ -29,6 +29,13 @@ A set up for my private machine.
 * git   
 * fonts-ubuntu
 * Visual Studio Code
+* fonts-terminus
+* menulibre
+* plank
+* faenza-icon-theme
+* hexchat
+* python3-venv
+* jq
 
 ## Yocto needed libraries
 * gawk 
