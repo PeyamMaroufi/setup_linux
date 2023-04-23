@@ -17,7 +17,7 @@ fi
 
 # Test 3. Install yocto libraries
 if sudo ./private y &> /dev/null; then
-    if [[ -z $(which python2) ]]; then
+    if [[ -z $(python2 -v) ]]; then
         echo "Test 3: Error - Python2 not found."
         exit 1
     else
