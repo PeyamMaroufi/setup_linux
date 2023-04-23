@@ -2,12 +2,13 @@
 # Name:     new_linux_setup
 # Purpose:  Install essential libraries for a native and VM Ubuntu distro
 #           to work properly with our development work.
-# Copyright:    NEVS AB
+# Copyright:    Payam M
 
 declare -A apps=(["python3"]="" ["python3-pip"]="" ["synaptic"]="" ["redshift"]="" ["shellcheck"]="" ["bleachbit"]=""
     ["vim"]="" ["vim-gtk"]="" ["vim-gtk3"]="" ["gparted"]="" ["build-essential"]="" ["make"]="" ["perl"]=""
     ["bluez"]="" ["blueman"]="" ["curl"]="" ["terminator"]="" ["fonts-firacode"]="" ["guvcview"]="" ["wget"]=""
-    ["gpg"]="" ["apt-transport-https"]="" ["git"]="" ["fonts-ubuntu"]="")
+	["gpg"]="" ["apt-transport-https"]="" ["git"]="" ["fonts-ubuntu"]="" ["plank"]="" ["menulibre"]="" ["jq"]="" ["python3-venv"]="" ["faenza-icom-theme"]="" ["hexchat"]="" ["fonts-terminus"]="")
+
 
 declare -A vscode_plugs=(["ms-azuretools.vscode-docker"]="" ["streetsidesoftware.code-spell-checker"]="" ["idleberg.hopscotch"]="" ["ms-python.python"]=""
     ["timonwong.shellcheck"]="" ["redhat.vscode-yaml"]="" ["shardulm94.trailing-spaces"]="")
