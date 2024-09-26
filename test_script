@@ -41,3 +41,9 @@ else
     exit 1
 fi
 
+# Test 5
+# It should be impossible to install plugins with sudo
+sudo ./private --plugins &> /dev/null
+EXIT_CODE=$?
+[[ "$EXIT_CODE" == 0 ]] && echo exit 1 
+

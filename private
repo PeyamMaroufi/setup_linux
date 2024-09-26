@@ -46,9 +46,16 @@ install_vscode() {
     fi
 }
 
-install_vscode_plugs() {
+wrong_permission() {
+	if [[ "$EUID" == 0 ]]; then
+		echo "Do not run the script as admin for installing vscode plugins."
+		exit
+	fi
+}
 
-    if hash code 2>/dev/null; then
+install_vscode_plugs() {
+    wrong_permission
+	if hash code 2>/dev/null; then
         for plug in "${!vscode_plugs[@]}"; do
             if code --install-extension "$plug" --force --user-data-dir "$HOME"/.vscode 2>/dev/null; then
                 vscode_plugs[$plug]="OK"
@@ -60,7 +67,7 @@ install_vscode_plugs() {
 }
 
 install_python_pkgs() {
-
+	wrong_permission
     for pkg in "${!python_pkgs[@]}"; do
         if pip3 install "$pkg"; then
             python_pkgs[$pkg]="OK"
@@ -89,6 +96,7 @@ install_docker() {
 
 install_theme() {
 
+	wrong_permission
 	if [[ ! -d "$HOME"/.themes ]]; then
 		mkdir "$HOME"/.themes
 	fi
