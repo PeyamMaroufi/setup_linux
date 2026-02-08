@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.1
+Type=Application
+Name=Dropbox
+Comment=A small descriptive blurb about this application.
+Icon=folder-dropbox
+Exec=thunar /home/payam/Dropbox
+Actions=
+Categories=menulibre-places;
