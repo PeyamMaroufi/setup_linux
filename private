@@ -3,28 +3,39 @@
 # Purpose:  Install essential libraries for a native and VM Ubuntu distro
 #           to work properly with our development work.
 # Copyright:    Payam M
+## @TODO Graphic card, default driver
+## Menu file :Done
+## terminator settings :Done
+## Mozilla adblock
+## remove all unneccessary from debian :Done
+## change the theme :Done
+## change the icons: Done
+## remove the buttom panel from xfce :Done
+## Add the sources
+## Add the user to sudo
+## Change the power, when running on laptop
+## change conky based on number of cpu
+## set up for tsc
+## install zed
+## vscode conf file
+## change the look
+
 
 declare -A apps=(["python3"]="" ["python3-pip"]="" ["synaptic"]="" ["redshift"]="" ["shellcheck"]="" ["bleachbit"]=""
-    ["vim"]="" ["vim-gtk"]="" ["vim-gtk3"]="" ["gparted"]="" ["build-essential"]="" ["make"]="" ["perl"]=""
-    ["bluez"]="" ["blueman"]="" ["curl"]="" ["terminator"]="" ["fonts-firacode"]="" ["guvcview"]="" ["wget"]=""
-	["gpg"]="" ["apt-transport-https"]="" ["git"]="" ["fonts-ubuntu"]="" ["plank"]="" ["menulibre"]="" ["jq"]="" ["python3-venv"]="" ["faenza-icom-theme"]="" ["hexchat"]="" ["fonts-terminus"]="")
-
-
+    ["vim"]="" ["vim-gtk3"]="" ["gparted"]="" ["build-essential"]="" ["make"]="" ["perl"]=""
+    ["bluez"]="" ["blueman"]="" ["curl"]="" ["terminator"]="" ["fonts-firacode"]="" ["wget"]=""
+	["gpg"]="" ["apt-transport-https"]="" ["git"]="" ["fonts-ubuntu"]="" ["plank"]="" ["menulibre"]="" ["jq"]="" ["python3-venv"]="" ["faenza-icon-theme"]="" ["hexchat"]="" ["fonts-terminus"]="")
+declare -A apps_to_remove=(["libreoffice-*"]="" ["goldendict-ng"]="" ["exfalso"]="" ["quodlibet"]="" ["fcitx5"]="" ["anthy"]="" ["fortune-mod"]="" ["xiterm+thai"]="")
 declare -A vscode_plugs=(["ms-azuretools.vscode-docker"]="" ["streetsidesoftware.code-spell-checker"]="" ["idleberg.hopscotch"]="" ["ms-python.python"]=""
     ["timonwong.shellcheck"]="" ["redhat.vscode-yaml"]="" ["shardulm94.trailing-spaces"]="")
-
 declare -A yocto_libs=(["gawk"]="" ["wget"]="" ["git-core"]="" ["diffstat"]="" ["unzip"]="" ["texinfo"]="" ["gcc-multilib"]="" ["build-essential"]="" ["chrpath"]="" ["socat"]="" ["libsdl1.2-dev"]="" ["xterm"]="" ["make"]="" ["xsltproc"]="" ["docbook-utils"]="" ["fop"]="" ["dblatex"]="" ["xmlto"]="" ["autoconf"]="" ["automake"]="" ["libtool"]="" ["libglib2.0-dev"]="" ["python"]="" ["bsdmainutils"]="" ["screen"]="")
-
-declare -A docker_libs=(["ca-certificates"]="" ["curl"]="" ["gnupg"]="" ["lsb-release"]="" ["docker-ce"]="" ["docker-ce-cli"]="" ["containerd.io"]="" ["docker-composer-plugin"]="")
-
-declare -A python_pkgs=(["autopep8"]="" ["pylint"]="")
 declare -A vims=(["vim_plugin"]="" ["vim_rc"]="")
 
 install_apps() {
 
-    apt update
+    sudo apt update
     for app in "${!apps[@]}"; do
-        if apt -y install -- "$app"; then
+        if sudo apt -y install -- "$app"; then
             apps[$app]="OK"
         else
             apps[$app]="FAIL"
@@ -32,42 +43,31 @@ install_apps() {
     done
 }
 
-install_vscode() {
-
-    if ! hash code 2>/dev/null; then
-        wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor >packages.microsoft.gpg
-        install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
-		chattr -i /etc/apt/sources.list
-        echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" >/etc/apt/sources.list.d/vscode.list
-        rm -f packages.microsoft.gpg
-		chattr +i /etc/apt/sources.list
-        apt update
-        apt -y install code
-    fi
+remove_default_apps() {
+	for app in "${!apps_to_remove[@]}"; do
+		if sudo apt -y remove -- "$app"; then
+        	    apps_to_remove[$app]="OK"
+        	else
+        	    apps_to_remove[$app]="FAIL"
+        fi
+	done
+	sudo apt autoremove -y || true
 }
 
-wrong_permission() {
-	if [[ "$EUID" == 0 ]]; then
-		echo "Do not run the script as admin for installing vscode plugins."
-		exit
+
+install_vscode_plugs() {
+	if hash code 2>/dev/null; then
+		for plug in "${!vscode_plugs[@]}"; do
+		    if code --install-extension "$plug" --force --user-data-dir "$HOME"/.vscode 2>/dev/null; then
+				vscode_plugs[$plug]="OK"
+		    else
+				vscode_plugs[$plug]="FAIL"
+		    fi
+		done
 	fi
 }
 
-install_vscode_plugs() {
-    wrong_permission
-	if hash code 2>/dev/null; then
-        for plug in "${!vscode_plugs[@]}"; do
-            if code --install-extension "$plug" --force --user-data-dir "$HOME"/.vscode 2>/dev/null; then
-                vscode_plugs[$plug]="OK"
-            else
-                vscode_plugs[$plug]="FAIL"
-            fi
-        done
-    fi
-}
-
 install_python_pkgs() {
-	wrong_permission
     for pkg in "${!python_pkgs[@]}"; do
         if pip3 install "$pkg"; then
             python_pkgs[$pkg]="OK"
@@ -77,26 +77,8 @@ install_python_pkgs() {
     done
 }
 
-install_docker() {
-	
-	mkdir -p /etc/apt/keyrings
-	if curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg; then
-		echo  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-		chmod a+r /etc/apt/keyrings/docker.gpg
-		apt update
-		for app in "${!docker_libs[@]}"; do
-			if apt -y install -- "$app"; then
-				docker_libs[$app]="OK"
-			else
-				docker_libs[$app]="FAIL"
-			fi
-		done
-	fi
-}
-
 install_theme() {
 
-	wrong_permission
 	if [[ ! -d "$HOME"/.themes ]]; then
 		mkdir "$HOME"/.themes
 	fi
@@ -108,6 +90,39 @@ install_theme() {
 	else
 		echo "Could not install Prelude theme."
 	fi
+	read -r -p "Do you want to run the new theme? [y/N] " answer
+	case "$answer" in
+		[yY]|[yY][eE][sS])
+		    echo "Applying theme..."
+		    xfconf-query -c xfwm4 -p /general/theme -s "prelude-dfr-0.5"
+		    ;; 
+		*)
+		    echo "Theme not applied."
+		    ;;
+	esac
+
+	if dpkg -s faenza-icon-theme >/dev/null 2>&1; then
+		read -r -p "Faenza icons are installed. Use them? [y/N] " answer
+		case "$answer" in
+		    [yY]|[yY][eE][sS])
+		        xfconf-query -c xsettings -p /Net/IconThemeName -s "Faenza"
+		        ;;
+			*)
+				echo "Icons not applied."
+				;;
+		esac
+	fi
+	read -r -p "Do you want to run Adwaita theme? [y/N] " answer
+	case "$answer" in
+		[yY]|[yY][eE][sS])
+		    echo "Applying theme..."
+		    xfconf-query -c xsettings -p /Net/ThemeName -s "Adwaita"
+		    ;; 
+		*)
+		    echo "Theme not applied."
+		    ;;
+	esac
+
 }
 
 configure_conky() {
@@ -138,24 +153,68 @@ configure_conky() {
 
 install_vim_plugs() {
 
-    vim_plug="https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim"
-    vimrc_file="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/main/vimrc"
-    if curl -sfLo "$HOME"/.vim/autoload/plug.vim --create-dirs "$vim_plug"; then
-        vims["vim_plugin"]="OK"
-        if curl -sfLo ~/.vimrc "$vimrc_file"; then
-            vims["vim_rc"]="OK"
-        else
-            vims["vim_rc"]="FAIL"
-        fi
-    else
-        vims["vim_plugin"]="FAIL"
-    fi
+	vim_plug="https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim"
+	vimrc_file="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/main/vimrc"
+	if curl -sfLo "$HOME"/.vim/autoload/plug.vim --create-dirs "$vim_plug"; then
+	vims["vim_plugin"]="OK"
+	if curl -sfLo ~/.vimrc "$vimrc_file"; then
+	    vims["vim_rc"]="OK"
+	else
+	    vims["vim_rc"]="FAIL"
+	fi
+	else
+		vims["vim_plugin"]="FAIL"
+	fi
+}
+configure_menu() {
+	desktops=(
+	"https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/menulibre-downloads.desktop"
+	"https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/menulibre-home.desktop"
+	"https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/menulibre-new-launcher.desktop"
+	"https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/xfce-settings-manager.desktop"
+	)
+	desktops_dest="$HOME/.local/share/applications"
+	directory="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/menulibre-places.directory"
+	directory_dest="$HOME/.local/share/desktop-directories"
+	xfce_setting_file="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/xfce-applications.menu"
+	xfce_setting_dest="$HOME/.config/menus"
+	terminator_config="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/config"
+	terminator_conf_dest="$HOME/.config/terminator"
+	xfce_shortcuts_apps="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/xfce4-keyboard-shortcuts.xml"
+	xfce_shortcuts_apps_dest="$HOME/.config/xfce4/xfconf/xfce-perchannel-xml"
+	thunar_settings="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/thunar.xml"
+	thunar_settings_dest="$HOME/.config/xfce4/xfconf/xfce-perchannel-xml"
+	xfce4_panel_file="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/xfce4-panel.xml"
+	xfce4_panel_file_dest="$HOME/.config/xfce4/xfconf/xfce-perchannel-xml"
+
+	for desk in "${desktops[@]}"; do
+		curl -sfL "$desk" -o "$desktops_dest/$(basename "$desk")"
+	done
+	curl -sfL "$directory" -o "$directory_dest/$(basename "$directory")"
+	curl -sfL "$xfce_setting_file" -o "$xfce_setting_dest/$(basename "$xfce_setting_file")"
+	curl -sfL "$terminator_config" -o "$terminator_conf_dest/$(basename "$terminator_config")"
+	curl -sfL "$xfce_shortcuts_apps" -o "$xfce_shortcuts_apps_dest/$(basename "$xfce_shortcuts_apps")"
+	curl -sfL "$thunar_settings" -o "$thunar_settings_dest/$(basename "$thunar_settings")"
+	curl -sfL "$xfce4_panel_file" -o "$xfce4_panel_file_dest/$(basename "$xfce4_panel_file")"
+
+	echo "Checking the files are downloaded:"
+	for d in "${desktops[@]}"; do
+		[[ -f "$desktops_dest/$(basename "$d")" ]] && echo "$desktops_dest/$(basename "$d") exists."
+	done
+	[[ -f "$directory_dest/$(basename "$directory")" ]] && echo "$directory_dest/$(basename "$directory") exists."
+	[[ -f "$xfce_setting_dest/$(basename "$xfce_setting_file")" ]] && echo "$xfce_setting_dest/$(basename "$xfce_setting_file") exists."
+	[[ -f "$terminator_conf_dest/$(basename "$terminator_config")" ]] && echo "$terminator_conf_dest/$(basename "$terminator_config") exists."
+	[[ -f "$xfce_shortcuts_apps_dest/$(basename "$xfce_shortcuts_apps")" ]] && echo "$xfce_shortcuts_apps_dest/$(basename "$xfce_shortcuts_apps") exists."
+	[[ -f "$thunar_settings_dest/$(basename "$thunar_settings")" ]] && echo "$thunar_settings_dest/$(basename "$thunar_settings") exists."
+	[[ -f "$xfce4_panel_file_dest/$(basename "$xfce4_panel_file")" ]] && echo "$xfce4_panel_file_dest/$(basename "$xfce4_panel_file") exists."
+
+
 }
 
 install_libraries_yocto () {
 
 	for lib in "${!yocto_libs[@]}"; do
-		if apt -y install -- "$lib"; then
+		if sudo apt -y install -- "$lib"; then
 			yocto_libs[$lib]="OK"
 		else
 			yocto_libs[$lib]="FAIL"
@@ -165,83 +224,60 @@ install_libraries_yocto () {
 }
 
 print_results() {
-
-	green="32"
+    declare -n stuff=$1
+    green="32"
     bold="\e[1;${green}m"
     no_style="\033[0m"
     echo ""
-    echo -e "${bold}Application install status:${no_style}"
-    printf '%s\n' "${!apps[@]}" "${apps[@]}" | pr -2t
-    echo -e "${bold}Vscode plugins install status:${no_style}"
-    printf '%s\n' "${!vscode_plugs[@]}" "${vscode_plugs[@]}" | pr -2t
-    echo -e "${bold}Python package install status:${no_style}"
-    printf '%s\n' "${!python_pkgs[@]}" "${python_pkgs[@]}" | pr -2t
-    echo -e "${bold}Vim install status:${no_style}"
-    printf '%s\n' "${!vims[@]}" "${vims[@]}" | pr -2t
-    echo -e "${bold}Yocto libraries install status:${no_style}"
-    printf '%s\n' "${!yocto_libs[@]}" "${yocto_libs[@]}" | pr -2t
-    echo -e "${bold}Docker libraries install status:${no_style}"
-    printf '%s\n' "${!docker_libs[@]}" "${docker_libs[@]}" | pr -2t
+    echo -e "${bold}The following was installed:${no_style}"
+    printf '%s\n' "${!stuff[@]}" "${stuff[@]}" | pr -2t
 }
 
 case "$1" in
 	a|--apps)
-		if [[ "$EUID" = 0 ]]; then
-			read -p "This script will install ${#apps[@]} applications. Press enter to continue."
-			i=0
-			for p in "${!apps[@]}"; do
-				echo "$(( i++ ))) $p"
-			done |xargs -L3 | column -t
-			install_apps
-			print_results
-		else
-			echo "You don't have enough permission to install applications"
-		fi
+		read -p "This script will install ${#apps[@]} applications. Press enter to continue."
+		i=0
+		for p in "${!apps[@]}"; do
+			echo "$(( i++ ))) $p"
+		done |xargs -L3 | column -t
+		install_apps
+		print_results apps
 		;;
 	y|--yocto)
-		if [[ "$EUID" = 0 ]]; then
-			read -p "This script will install ${#yocto_libs[@]} applications. Press enter to continue."
-			i=0
-			for p in "${!yocto_libs[@]}"; do
-				echo "$(( i++ ))) $p"
-			done |xargs -L3 | column -t
-			install_libraries_yocto
-			print_results
-		else
-			echo "You don't have enough permission to install Yocto's required libraries."
-		fi
+		read -p "This script will install ${#yocto_libs[@]} applications. Press enter to continue."
+		i=0
+		for p in "${!yocto_libs[@]}"; do
+			echo "$(( i++ ))) $p"
+		done |xargs -L3 | column -t
+		install_libraries_yocto
+		print_results yocto_libs
 		;;
-	d|--docker)
-		if [[ "$EUID" = 0 ]]; then
-			install_docker
-			print_results
-		else
-			echo "You don't have enough permission to install docker."
-		fi
-		;;	
-	s|--vscode)
-		if [[ "$EUID" = 0 ]]; then
-			install_vscode
-			print_results
-		else
-			echo "You don't have enough permission to install vscode."
-		fi
+	r|--remove)
+		read -p "This script will remove ${#apps_to_remove[@]} applications. Press enter to continue."
+		i=0
+		for p in "${!apps_to_remove[@]}"; do
+			echo "$(( i++ ))) $p"
+		done |xargs -L3 | column -t
+		remove_default_apps
+		print_results apps_to_remove
 		;;
 	p|--plugins)
 		install_vscode_plugs
-		install_python_pkgs
 		install_vim_plugs
-		print_results
+		print_results vscode_plugs
+		print_results vims
 		;;
 	t|--theme)
 		install_theme
 		;;
+	m|--menu)
+		configure_menu
+		;;
 	c|--conky)
 		configure_conky
-		print_results
 		;;
 	*)
-		echo -e "Script usage: \n\t[a] or [--apps] To install needed applications.\n\t[y] or [--yocto] To install application needed by Yocto.\n\t[p] or [--plugins] To install Visual Code and Vim plugins.\n\t[d] or [--vscode] To install Visual Code.\n\t[t] or [--theme] To install Prelude theme on XFCE4.\n\t[c] or [--conky] To install and configure Conky." >&2
+		echo -e "Script usage: \n\t[a] or [--apps] To install needed applications.\n\t[y] or [--yocto] To install application needed by Yocto.\n\t[p] or [--plugins] To install Visual Code and Vim plugins.\n\t[t] or [--theme] To install Prelude theme on XFCE4.\n\t[c] or [--conky] To install and configure Conky.\n\t[r] or [--remove] To remove default apps on Debian.\n\t[m] or [--menu] To change the default start menu and other perferred settings on xfce." >&2
 		exit 1
 		;;
 esac
