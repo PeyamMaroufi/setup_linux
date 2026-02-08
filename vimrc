@@ -36,7 +36,6 @@ call plug#begin()
 	Plug 'vim-airline/vim-airline-themes'
 	Plug 'tell-k/vim-autopep8'
 	Plug 'preservim/tagbar'
-	Plug 'dense-analysis/ale'
 
 call plug#end()
 
