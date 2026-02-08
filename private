@@ -24,7 +24,7 @@
 declare -A apps=(["python3"]="" ["python3-pip"]="" ["synaptic"]="" ["redshift"]="" ["shellcheck"]="" ["bleachbit"]=""
     ["vim"]="" ["vim-gtk3"]="" ["gparted"]="" ["build-essential"]="" ["make"]="" ["perl"]=""
     ["bluez"]="" ["blueman"]="" ["curl"]="" ["terminator"]="" ["fonts-firacode"]="" ["wget"]=""
-	["gpg"]="" ["apt-transport-https"]="" ["git"]="" ["fonts-ubuntu"]="" ["plank"]="" ["menulibre"]="" ["jq"]="" ["python3-venv"]="" ["faenza-icon-theme"]="" ["hexchat"]="" ["fonts-terminus"]="")
+	["gpg"]="" ["apt-transport-https"]="" ["git"]="" ["fonts-ubuntu"]="" ["plank"]="" ["menulibre"]="" ["jq"]="" ["python3-venv"]="" ["faenza-icon-theme"]="" ["hexchat"]="" ["fonts-terminus"]="" ["rsync"]="")
 declare -A apps_to_remove=(["libreoffice-*"]="" ["goldendict-ng"]="" ["exfalso"]="" ["quodlibet"]="" ["fcitx5"]="" ["anthy"]="" ["fortune-mod"]="" ["xiterm+thai"]="")
 declare -A vscode_plugs=(["ms-azuretools.vscode-docker"]="" ["streetsidesoftware.code-spell-checker"]="" ["idleberg.hopscotch"]="" ["ms-python.python"]=""
     ["timonwong.shellcheck"]="" ["redhat.vscode-yaml"]="" ["shardulm94.trailing-spaces"]="")
@@ -41,6 +41,7 @@ install_apps() {
             apps[$app]="FAIL"
         fi
     done
+	curl -f https://zed.dev/install.sh | sh
 }
 
 remove_default_apps() {
@@ -178,24 +179,25 @@ configure_menu() {
 	directory_dest="$HOME/.local/share/desktop-directories"
 	xfce_setting_file="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/xfce-applications.menu"
 	xfce_setting_dest="$HOME/.config/menus"
-	terminator_config="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/config"
+	terminator_settings="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/config"
 	terminator_conf_dest="$HOME/.config/terminator"
-	xfce_shortcuts_apps="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/xfce4-keyboard-shortcuts.xml"
-	xfce_shortcuts_apps_dest="$HOME/.config/xfce4/xfconf/xfce-perchannel-xml"
-	thunar_settings="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/thunar.xml"
-	thunar_settings_dest="$HOME/.config/xfce4/xfconf/xfce-perchannel-xml"
-	xfce4_panel_file="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/xfce4-panel.xml"
-	xfce4_panel_file_dest="$HOME/.config/xfce4/xfconf/xfce-perchannel-xml"
+	xfce_shortcut_settings="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/xfce4-keyboard-shortcuts.xml"
+	xfce_thunar_settings="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/thunar.xml"
+	xfce_panel_settings="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/xfce4-panel.xml"
+	xfce4_power_settings="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/xfce4-power-manager.xml"
+	xfce_settings_dest="$HOME/.config/xfce4/xfconf/xfce-perchannel-xml"
+
 
 	for desk in "${desktops[@]}"; do
 		curl -sfL "$desk" -o "$desktops_dest/$(basename "$desk")"
 	done
 	curl -sfL "$directory" -o "$directory_dest/$(basename "$directory")"
 	curl -sfL "$xfce_setting_file" -o "$xfce_setting_dest/$(basename "$xfce_setting_file")"
-	curl -sfL "$terminator_config" -o "$terminator_conf_dest/$(basename "$terminator_config")"
-	curl -sfL "$xfce_shortcuts_apps" -o "$xfce_shortcuts_apps_dest/$(basename "$xfce_shortcuts_apps")"
-	curl -sfL "$thunar_settings" -o "$thunar_settings_dest/$(basename "$thunar_settings")"
-	curl -sfL "$xfce4_panel_file" -o "$xfce4_panel_file_dest/$(basename "$xfce4_panel_file")"
+	curl -sfL "$terminator_settings" -o "$terminator_conf_dest/$(basename "$terminator_settings")"
+	curl -sfL "$xfce_shortcut_settings" -o "$xfce_settings_dest/$(basename "$xfce_shortcut_settings")"
+	curl -sfL "$xfce_thunar_settings" -o "$xfce_settings_dest/$(basename "$xfce_thunar_settings")"
+	curl -sfL "$xfce_panel_settings" -o "$xfce_settings_dest/$(basename "$xfce_panel_settings")"
+	curl -sfL "$xfce4_power_settings" -o "$xfce_settings_dest/$(basename "$xfce4_power_settings")"
 
 	echo "Checking the files are downloaded:"
 	for d in "${desktops[@]}"; do
@@ -203,10 +205,11 @@ configure_menu() {
 	done
 	[[ -f "$directory_dest/$(basename "$directory")" ]] && echo "$directory_dest/$(basename "$directory") exists."
 	[[ -f "$xfce_setting_dest/$(basename "$xfce_setting_file")" ]] && echo "$xfce_setting_dest/$(basename "$xfce_setting_file") exists."
-	[[ -f "$terminator_conf_dest/$(basename "$terminator_config")" ]] && echo "$terminator_conf_dest/$(basename "$terminator_config") exists."
-	[[ -f "$xfce_shortcuts_apps_dest/$(basename "$xfce_shortcuts_apps")" ]] && echo "$xfce_shortcuts_apps_dest/$(basename "$xfce_shortcuts_apps") exists."
-	[[ -f "$thunar_settings_dest/$(basename "$thunar_settings")" ]] && echo "$thunar_settings_dest/$(basename "$thunar_settings") exists."
-	[[ -f "$xfce4_panel_file_dest/$(basename "$xfce4_panel_file")" ]] && echo "$xfce4_panel_file_dest/$(basename "$xfce4_panel_file") exists."
+	[[ -f "$terminator_conf_dest/$(basename "$terminator_settings")" ]] && echo "$terminator_conf_dest/$(basename "$terminator_settings") exists."
+	[[ -f "$xfce_settings_dest/$(basename "$xfce_shortcut_settings")" ]] && echo "$xfce_settings_dest/$(basename "$xfce_shortcut_settings") exists."
+	[[ -f "$xfce_settings_dest/$(basename "$xfce_thunar_settings")" ]] && echo "$xfce_settings_dest/$(basename "$xfce_thunar_settings") exists."
+	[[ -f "$xfce_settings_dest/$(basename "$xfce_panel_settings")" ]] && echo "$xfce_settings_dest/$(basename "$xfce_panel_settings") exists."
+	[[ -f "$xfce_settings_dest/$(basename "$xfce4_power_settings")" ]] && echo "$xfce_settings_dest/$(basename "$xfce4_power_settings") exists."
 
 
 }
