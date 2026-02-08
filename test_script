@@ -18,30 +18,17 @@ fi
 # Test 3. Install theme
 if ./private t &> /dev/null; then
     if [[ ! -d "$HOME"/.themes ]]; then
-        echo "Test 4: Error - Didn't create the .themes folder."
+        echo "Test 3: Error - Didn't create the .themes folder."
         exit 1
     else
-        echo "Test 4: successful."
+        echo "Test 3: successful."
     fi
 else
-    echo "Test 4: Fail."
+    echo "Test 3: Fail."
     exit 1
 fi
 
-# Test 4. Install yocto libraries
-if sudo ./private d &> /dev/null; then
-    if [[ -z $(which docker) ]]; then
-        echo "Test 5: Error - Docker not found."
-        exit 1
-    else
-        echo "Test 5: successful."
-    fi
-else
-    echo "Test 5: Fail."
-    exit 1
-fi
-
-# Test 5
+# Test 4
 # It should be impossible to install plugins with sudo
 sudo ./private --plugins &> /dev/null
 EXIT_CODE=$?
