@@ -11,7 +11,7 @@
 ## change the theme :Done
 ## change the icons: Done
 ## remove the buttom panel from xfce :Done
-## Add the sources
+## Add the sources: Done
 ## Add the user to sudo
 ## Change the power, when running on laptop
 ## change conky based on number of cpu
@@ -20,19 +20,71 @@
 ## vscode conf file
 ## change the look
 
-
 declare -A apps=(["python3"]="" ["python3-pip"]="" ["synaptic"]="" ["redshift"]="" ["shellcheck"]="" ["bleachbit"]=""
     ["vim"]="" ["vim-gtk3"]="" ["gparted"]="" ["build-essential"]="" ["make"]="" ["perl"]=""
     ["bluez"]="" ["blueman"]="" ["curl"]="" ["terminator"]="" ["fonts-firacode"]="" ["wget"]=""
-	["gpg"]="" ["apt-transport-https"]="" ["git"]="" ["fonts-ubuntu"]="" ["plank"]="" ["menulibre"]="" ["jq"]="" ["python3-venv"]="" ["faenza-icon-theme"]="" ["hexchat"]="" ["fonts-terminus"]="" ["rsync"]="")
-declare -A apps_to_remove=(["libreoffice-*"]="" ["goldendict-ng"]="" ["exfalso"]="" ["quodlibet"]="" ["fcitx5"]="" ["anthy"]="" ["fortune-mod"]="" ["cups"]="" ["xiterm+thai"]="")
+    ["gpg"]="" ["apt-transport-https"]="" ["git"]="" ["fonts-ubuntu"]="" ["plank"]="" ["menulibre"]="" ["jq"]="" ["python3-venv"]="" ["faenza-icon-theme"]="" ["hexchat"]="" ["fonts-terminus"]="" ["rsync"]="")
+declare -A apps_to_remove=(["libreoffice-*"]="" ["goldendict-ng"]="" ["exfalso"]="" ["quodlibet"]="" ["fcitx5"]="" ["anthy"]="" ["fortune-mod"]="" ["cups"]="" ["xiterm thai"]="")
 declare -A vscode_plugs=(["ms-azuretools.vscode-docker"]="" ["streetsidesoftware.code-spell-checker"]="" ["idleberg.hopscotch"]="" ["ms-python.python"]=""
     ["timonwong.shellcheck"]="" ["redhat.vscode-yaml"]="" ["shardulm94.trailing-spaces"]="")
 declare -A yocto_libs=(["gawk"]="" ["wget"]="" ["git-core"]="" ["diffstat"]="" ["unzip"]="" ["texinfo"]="" ["gcc-multilib"]="" ["build-essential"]="" ["chrpath"]="" ["socat"]="" ["libsdl1.2-dev"]="" ["xterm"]="" ["make"]="" ["xsltproc"]="" ["docbook-utils"]="" ["fop"]="" ["dblatex"]="" ["xmlto"]="" ["autoconf"]="" ["automake"]="" ["libtool"]="" ["libglib2.0-dev"]="" ["python"]="" ["bsdmainutils"]="" ["screen"]="")
 declare -A vims=(["vim_plugin"]="" ["vim_rc"]="")
 
-install_apps() {
+add_sources() {
+    version_name=$(grep VERSION_CODENAME /etc/os-release | cut -d'=' -f2)
+    sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
+    echo "Backup created at /etc/apt/sources.list.bak"
+    read -r -d '' DEBIAN_JSON <<'EOF'
+{
+  "trixie": [
+    {
+      "sources": [
+        "deb https://deb.debian.org/debian/ trixie contrib main non-free non-free-firmware",
+        "deb https://deb.debian.org/debian/ trixie-updates contrib main non-free non-free-firmware",
+        "deb https://deb.debian.org/debian/ trixie-proposed-updates contrib main non-free non-free-firmware",
+        "deb https://deb.debian.org/debian/ trixie-backports contrib main non-free non-free-firmware",
+        "deb https://security.debian.org/debian-security/ trixie-security contrib main non-free non-free-firmware"
+      ]
+    }
+  ],
+  "bookworm": [
+    {
+      "sources": [
+        "deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware",
+        "deb http://deb.debian.org/debian bookworm-updates main contrib non-free non-free-firmware",
+        "deb http://deb.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware"
+      ]
+    }
+  ],
+  "bullseye": [
+    {
+      "sources": [
+        "deb http://deb.debian.org/debian bullseye main contrib non-free",
+        "deb http://deb.debian.org/debian bullseye-updates main contrib non-free",
+        "deb http://deb.debian.org/debian bullseye-backports main contrib non-free",
+        "deb http://security.debian.org/debian-security/ bullseye-security main contrib non-free"
+      ]
+    }
+  ]
+}
+EOF
+    # Extract sources for current release using grep/sed
+    echo "Writing sources for Debian release: $version_name"
 
+    echo "$DEBIAN_JSON" |
+        awk -v ver="$version_name" '
+    $0 ~ """ver"": [" {flag=1; next}  # Start after the release name
+    flag && /"sources": [/ {next}      # Skip the "sources" line
+    flag && /]/ {flag=0}               # Stop at closing bracket
+    flag && /"/ {
+      gsub(/^[[:space:]]*"|"[,[:space:]]*$/, "", $0)
+      print
+    }' | sudo tee /etc/apt/sources.list
+
+    echo "Done. /etc/apt/sources.list updated."
+}
+install_apps() {
+    add_sources
     sudo apt update
     for app in "${!apps[@]}"; do
         if sudo apt -y install -- "$app"; then
@@ -41,36 +93,35 @@ install_apps() {
             apps[$app]="FAIL"
         fi
     done
-	curl -f https://zed.dev/install.sh | sh
+    curl -f https://zed.dev/install.sh | sh
 }
 
 remove_default_apps() {
-	for app in "${!apps_to_remove[@]}"; do
-		if sudo apt -y remove -- "$app"; then
-        	    apps_to_remove[$app]="OK"
-        	else
-        	    apps_to_remove[$app]="FAIL"
+    for app in "${!apps_to_remove[@]}"; do
+        if sudo apt -y remove -- "$app"; then
+            apps_to_remove[$app]="OK"
+        else
+            apps_to_remove[$app]="FAIL"
         fi
-	done
-	# Remove the unneded languages and such
-	dpkg -l | awk '/^ii  hunspell-/{print $2}' | grep -v -E 'hunspell-en-us|hunspell-en-gb' | xargs sudo apt remove -y
-	dpkg -l | awk '/^ii  aspell-/{print $2}' | grep -v -E 'aspell-en$|aspell-en-us$' | xargs sudo apt remove -y
-	dpkg -l | awk '/^ii  task-/{print $2}' | grep -v -E '^(task-xfce-desktop|task-laptop|task-english-desktop)$' | xargs sudo apt remove -y
-	sudo apt autoremove -y
+    done
+    # Remove the unneded languages and such
+    dpkg -l | awk '/^ii  hunspell-/{print $2}' | grep -v -E 'hunspell-en-us|hunspell-en-gb' | xargs sudo apt remove -y
+    dpkg -l | awk '/^ii  aspell-/{print $2}' | grep -v -E 'aspell-en$|aspell-en-us$' | xargs sudo apt remove -y
+    dpkg -l | awk '/^ii  task-/{print $2}' | grep -v -E '^(task-xfce-desktop|task-laptop|task-english-desktop)$' | xargs sudo apt remove -y
+    sudo apt autoremove -y
 
 }
 
-
 install_vscode_plugs() {
-	if hash code 2>/dev/null; then
-		for plug in "${!vscode_plugs[@]}"; do
-		    if code --install-extension "$plug" --force --user-data-dir "$HOME"/.vscode 2>/dev/null; then
-				vscode_plugs[$plug]="OK"
-		    else
-				vscode_plugs[$plug]="FAIL"
-		    fi
-		done
-	fi
+    if hash code 2>/dev/null; then
+        for plug in "${!vscode_plugs[@]}"; do
+            if code --install-extension "$plug" --force --user-data-dir "$HOME"/.vscode 2>/dev/null; then
+                vscode_plugs[$plug]="OK"
+            else
+                vscode_plugs[$plug]="FAIL"
+            fi
+        done
+    fi
 }
 
 install_python_pkgs() {
@@ -85,207 +136,208 @@ install_python_pkgs() {
 
 install_theme() {
 
-	if [[ ! -d "$HOME"/.themes ]]; then
-		mkdir "$HOME"/.themes
-	fi
+    if [[ ! -d "$HOME"/.themes ]]; then
+        mkdir "$HOME"/.themes
+    fi
 
-	if curl -s https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/main/148144-prelude-dfr-0.5.tar.tar -o "$HOME"/.themes/148144-prelude-dfr-0.5.tar.tar; then
-		tar -xf "$HOME"/.themes/148144-prelude-dfr-0.5.tar.tar -C "$HOME"/.themes/ &> /dev/null || { echo "Error: Could not extract tar file."; exit 1; }
-		rm "$HOME"/.themes/148144-prelude-dfr-0.5.tar.tar &> /dev/null
-		echo "Prelude theme is installed."
-	else
-		echo "Could not install Prelude theme."
-	fi
-	read -r -p "Do you want to run the new theme? [y/N] " answer
-	case "$answer" in
-		[yY]|[yY][eE][sS])
-		    echo "Applying theme..."
-		    xfconf-query -c xfwm4 -p /general/theme -s "prelude-dfr-0.5"
-		    ;; 
-		*)
-		    echo "Theme not applied."
-		    ;;
-	esac
+    if curl -s https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/main/148144-prelude-dfr-0.5.tar.tar -o "$HOME"/.themes/148144-prelude-dfr-0.5.tar.tar; then
+        tar -xf "$HOME"/.themes/148144-prelude-dfr-0.5.tar.tar -C "$HOME"/.themes/ &>/dev/null || {
+            echo "Error: Could not extract tar file."
+            exit 1
+        }
+        rm "$HOME"/.themes/148144-prelude-dfr-0.5.tar.tar &>/dev/null
+        echo "Prelude theme is installed."
+    else
+        echo "Could not install Prelude theme."
+    fi
+    read -r -p "Do you want to run the new theme? [y/N] " answer
+    case "$answer" in
+    [yY] | [yY][eE][sS])
+        echo "Applying theme..."
+        xfconf-query -c xfwm4 -p /general/theme -s "prelude-dfr-0.5"
+        ;;
+    *)
+        echo "Theme not applied."
+        ;;
+    esac
 
-	if dpkg -s faenza-icon-theme >/dev/null 2>&1; then
-		read -r -p "Faenza icons are installed. Use them? [y/N] " answer
-		case "$answer" in
-		    [yY]|[yY][eE][sS])
-		        xfconf-query -c xsettings -p /Net/IconThemeName -s "Faenza"
-		        ;;
-			*)
-				echo "Icons not applied."
-				;;
-		esac
-	fi
-	read -r -p "Do you want to run Adwaita theme? [y/N] " answer
-	case "$answer" in
-		[yY]|[yY][eE][sS])
-		    echo "Applying theme..."
-		    xfconf-query -c xsettings -p /Net/ThemeName -s "Adwaita"
-		    ;; 
-		*)
-		    echo "Theme not applied."
-		    ;;
-	esac
+    if dpkg -s faenza-icon-theme >/dev/null 2>&1; then
+        read -r -p "Faenza icons are installed. Use them? [y/N] " answer
+        case "$answer" in
+        [yY] | [yY][eE][sS])
+            xfconf-query -c xsettings -p /Net/IconThemeName -s "Faenza"
+            ;;
+        *)
+            echo "Icons not applied."
+            ;;
+        esac
+    fi
+    read -r -p "Do you want to run Adwaita theme? [y/N] " answer
+    case "$answer" in
+    [yY] | [yY][eE][sS])
+        echo "Applying theme..."
+        xfconf-query -c xsettings -p /Net/ThemeName -s "Adwaita"
+        ;;
+    *)
+        echo "Theme not applied."
+        ;;
+    esac
 
 }
 
 configure_conky() {
 
-	if curl -s  http://drive.noobslab.com/data/conky/start-conky -o "$HOME"/.start_conky; then
-		chmod +x "$HOME"/.start-conky
-		echo "Conky start script is created and exceptionable."
+    if curl -s http://drive.noobslab.com/data/conky/start-conky -o "$HOME"/.start_conky; then
+        chmod x "$HOME"/.start-conky
+        echo "Conky start script is created and exceptionable."
 
-	else
-		echo "Could not create a executionable Conky start script."
-	fi
+    else
+        echo "Could not create a executionable Conky start script."
+    fi
 
-	if curl -s  http://drive.noobslab.com/data/conky/Hardy/hardy-conky-gmo.zip -o "$HOME"/hardy-conky-gmo.zip; then
-		unzip -q "$HOME"/hardy-conky-gmo.zip && rm "$HOME"/hardy-conky-gmo.zip
-		echo "Downloaded the fonts and symbols for conky theme."
-	else
-		echo "Could not download the fonts and symbols for conky theme."
-		return 1
-	fi
-	if curl -s https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/main/conkyrc -o "$HOME"/.conkyrc; then
-		echo "New conkyrc file is now available in home directory."
-	else
-		echo "Could not download conkyrc. Proceeding with the default one."
-		return 1
-	fi
+    if curl -s http://drive.noobslab.com/data/conky/Hardy/hardy-conky-gmo.zip -o "$HOME"/hardy-conky-gmo.zip; then
+        unzip -q "$HOME"/hardy-conky-gmo.zip && rm "$HOME"/hardy-conky-gmo.zip
+        echo "Downloaded the fonts and symbols for conky theme."
+    else
+        echo "Could not download the fonts and symbols for conky theme."
+        return 1
+    fi
+    if curl -s https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/main/conkyrc -o "$HOME"/.conkyrc; then
+        echo "New conkyrc file is now available in home directory."
+    else
+        echo "Could not download conkyrc. Proceeding with the default one."
+        return 1
+    fi
 
 }
 
 install_vim_plugs() {
 
-	vim_plug="https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim"
-	vimrc_file="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/main/vimrc"
-	if curl -sfLo "$HOME"/.vim/autoload/plug.vim --create-dirs "$vim_plug"; then
-	vims["vim_plugin"]="OK"
-	if curl -sfLo ~/.vimrc "$vimrc_file"; then
-	    vims["vim_rc"]="OK"
-	else
-	    vims["vim_rc"]="FAIL"
-	fi
-	else
-		vims["vim_plugin"]="FAIL"
-	fi
+    vim_plug="https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim"
+    vimrc_file="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/main/vimrc"
+    if curl -sfLo "$HOME"/.vim/autoload/plug.vim --create-dirs "$vim_plug"; then
+        vims["vim_plugin"]="OK"
+        if curl -sfLo ~/.vimrc "$vimrc_file"; then
+            vims["vim_rc"]="OK"
+        else
+            vims["vim_rc"]="FAIL"
+        fi
+    else
+        vims["vim_plugin"]="FAIL"
+    fi
 }
 configure_menu() {
-	desktops=(
-	"https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/menulibre-downloads.desktop"
-	"https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/menulibre-home.desktop"
-	"https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/menulibre-new-launcher.desktop"
-	"https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/xfce-settings-manager.desktop"
-	)
-	desktops_dest="$HOME/.local/share/applications"
-	directory="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/menulibre-places.directory"
-	directory_dest="$HOME/.local/share/desktop-directories"
-	xfce_setting_file="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/xfce-applications.menu"
-	xfce_setting_dest="$HOME/.config/menus"
-	terminator_settings="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/config"
-	terminator_conf_dest="$HOME/.config/terminator"
-	xfce_shortcut_settings="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/xfce4-keyboard-shortcuts.xml"
-	xfce_thunar_settings="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/thunar.xml"
-	xfce_panel_settings="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/xfce4-panel.xml"
-	xfce4_power_settings="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/xfce4-power-manager.xml"
-	xfce_settings_dest="$HOME/.config/xfce4/xfconf/xfce-perchannel-xml"
+    desktops=(
+        "https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/menulibre-downloads.desktop"
+        "https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/menulibre-home.desktop"
+        "https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/menulibre-new-launcher.desktop"
+        "https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/xfce-settings-manager.desktop"
+    )
+    desktops_dest="$HOME/.local/share/applications"
+    directory="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/menulibre-places.directory"
+    directory_dest="$HOME/.local/share/desktop-directories"
+    xfce_setting_file="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/xfce-applications.menu"
+    xfce_setting_dest="$HOME/.config/menus"
+    terminator_settings="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/config"
+    terminator_conf_dest="$HOME/.config/terminator"
+    xfce_shortcut_settings="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/xfce4-keyboard-shortcuts.xml"
+    xfce_thunar_settings="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/thunar.xml"
+    xfce_panel_settings="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/xfce4-panel.xml"
+    xfce4_power_settings="https://raw.githubusercontent.com/PeyamMaroufi/setup_linux/refs/heads/main/resources/xfce4-power-manager.xml"
+    xfce_settings_dest="$HOME/.config/xfce4/xfconf/xfce-perchannel-xml"
 
+    for desk in "${desktops[@]}"; do
+        curl -sfL "$desk" -o "$desktops_dest/$(basename "$desk")"
+    done
+    curl -sfL "$directory" -o "$directory_dest/$(basename "$directory")"
+    curl -sfL "$xfce_setting_file" -o "$xfce_setting_dest/$(basename "$xfce_setting_file")"
+    curl -sfL "$terminator_settings" -o "$terminator_conf_dest/$(basename "$terminator_settings")"
+    curl -sfL "$xfce_shortcut_settings" -o "$xfce_settings_dest/$(basename "$xfce_shortcut_settings")"
+    curl -sfL "$xfce_thunar_settings" -o "$xfce_settings_dest/$(basename "$xfce_thunar_settings")"
+    curl -sfL "$xfce_panel_settings" -o "$xfce_settings_dest/$(basename "$xfce_panel_settings")"
+    curl -sfL "$xfce4_power_settings" -o "$xfce_settings_dest/$(basename "$xfce4_power_settings")"
 
-	for desk in "${desktops[@]}"; do
-		curl -sfL "$desk" -o "$desktops_dest/$(basename "$desk")"
-	done
-	curl -sfL "$directory" -o "$directory_dest/$(basename "$directory")"
-	curl -sfL "$xfce_setting_file" -o "$xfce_setting_dest/$(basename "$xfce_setting_file")"
-	curl -sfL "$terminator_settings" -o "$terminator_conf_dest/$(basename "$terminator_settings")"
-	curl -sfL "$xfce_shortcut_settings" -o "$xfce_settings_dest/$(basename "$xfce_shortcut_settings")"
-	curl -sfL "$xfce_thunar_settings" -o "$xfce_settings_dest/$(basename "$xfce_thunar_settings")"
-	curl -sfL "$xfce_panel_settings" -o "$xfce_settings_dest/$(basename "$xfce_panel_settings")"
-	curl -sfL "$xfce4_power_settings" -o "$xfce_settings_dest/$(basename "$xfce4_power_settings")"
-
-	echo "Checking the files are downloaded:"
-	for d in "${desktops[@]}"; do
-		[[ -f "$desktops_dest/$(basename "$d")" ]] && echo "$desktops_dest/$(basename "$d") exists."
-	done
-	[[ -f "$directory_dest/$(basename "$directory")" ]] && echo "$directory_dest/$(basename "$directory") exists."
-	[[ -f "$xfce_setting_dest/$(basename "$xfce_setting_file")" ]] && echo "$xfce_setting_dest/$(basename "$xfce_setting_file") exists."
-	[[ -f "$terminator_conf_dest/$(basename "$terminator_settings")" ]] && echo "$terminator_conf_dest/$(basename "$terminator_settings") exists."
-	[[ -f "$xfce_settings_dest/$(basename "$xfce_shortcut_settings")" ]] && echo "$xfce_settings_dest/$(basename "$xfce_shortcut_settings") exists."
-	[[ -f "$xfce_settings_dest/$(basename "$xfce_thunar_settings")" ]] && echo "$xfce_settings_dest/$(basename "$xfce_thunar_settings") exists."
-	[[ -f "$xfce_settings_dest/$(basename "$xfce_panel_settings")" ]] && echo "$xfce_settings_dest/$(basename "$xfce_panel_settings") exists."
-	[[ -f "$xfce_settings_dest/$(basename "$xfce4_power_settings")" ]] && echo "$xfce_settings_dest/$(basename "$xfce4_power_settings") exists."
-
+    echo "Checking the files are downloaded:"
+    for d in "${desktops[@]}"; do
+        [[ -f "$desktops_dest/$(basename "$d")" ]] && echo "$desktops_dest/$(basename "$d") exists."
+    done
+    [[ -f "$directory_dest/$(basename "$directory")" ]] && echo "$directory_dest/$(basename "$directory") exists."
+    [[ -f "$xfce_setting_dest/$(basename "$xfce_setting_file")" ]] && echo "$xfce_setting_dest/$(basename "$xfce_setting_file") exists."
+    [[ -f "$terminator_conf_dest/$(basename "$terminator_settings")" ]] && echo "$terminator_conf_dest/$(basename "$terminator_settings") exists."
+    [[ -f "$xfce_settings_dest/$(basename "$xfce_shortcut_settings")" ]] && echo "$xfce_settings_dest/$(basename "$xfce_shortcut_settings") exists."
+    [[ -f "$xfce_settings_dest/$(basename "$xfce_thunar_settings")" ]] && echo "$xfce_settings_dest/$(basename "$xfce_thunar_settings") exists."
+    [[ -f "$xfce_settings_dest/$(basename "$xfce_panel_settings")" ]] && echo "$xfce_settings_dest/$(basename "$xfce_panel_settings") exists."
+    [[ -f "$xfce_settings_dest/$(basename "$xfce4_power_settings")" ]] && echo "$xfce_settings_dest/$(basename "$xfce4_power_settings") exists."
 
 }
 
-install_libraries_yocto () {
+install_libraries_yocto() {
 
-	for lib in "${!yocto_libs[@]}"; do
-		if sudo apt -y install -- "$lib"; then
-			yocto_libs[$lib]="OK"
-		else
-			yocto_libs[$lib]="FAIL"
-		fi
-	done
+    for lib in "${!yocto_libs[@]}"; do
+        if sudo apt -y install -- "$lib"; then
+            yocto_libs[$lib]="OK"
+        else
+            yocto_libs[$lib]="FAIL"
+        fi
+    done
 
 }
 
 print_results() {
     declare -n stuff=$1
     green="32"
-    bold="\e[1;${green}m"
-    no_style="\033[0m"
+    bold="e[1;${green}m"
+    no_style="33[0m"
     echo ""
     echo -e "${bold}The following was installed:${no_style}"
-    printf '%s\n' "${!stuff[@]}" "${stuff[@]}" | pr -2t
+    printf '%sn' "${!stuff[@]}" "${stuff[@]}" | pr -2t
 }
 
 case "$1" in
-	a|--apps)
-		read -p "This script will install ${#apps[@]} applications. Press enter to continue."
-		i=0
-		for p in "${!apps[@]}"; do
-			echo "$(( i++ ))) $p"
-		done |xargs -L3 | column -t
-		install_apps
-		print_results apps
-		;;
-	y|--yocto)
-		read -p "This script will install ${#yocto_libs[@]} applications. Press enter to continue."
-		i=0
-		for p in "${!yocto_libs[@]}"; do
-			echo "$(( i++ ))) $p"
-		done |xargs -L3 | column -t
-		install_libraries_yocto
-		print_results yocto_libs
-		;;
-	r|--remove)
-		read -p "This script will remove ${#apps_to_remove[@]} applications. Press enter to continue."
-		i=0
-		for p in "${!apps_to_remove[@]}"; do
-			echo "$(( i++ ))) $p"
-		done |xargs -L3 | column -t
-		remove_default_apps
-		print_results apps_to_remove
-		;;
-	p|--plugins)
-		install_vscode_plugs
-		install_vim_plugs
-		print_results vscode_plugs
-		print_results vims
-		;;
-	t|--theme)
-		install_theme
-		;;
-	m|--menu)
-		configure_menu
-		;;
-	c|--conky)
-		configure_conky
-		;;
-	*)
-		echo -e "Script usage: \n\t[a] or [--apps] To install needed applications.\n\t[y] or [--yocto] To install application needed by Yocto.\n\t[p] or [--plugins] To install Visual Code and Vim plugins.\n\t[t] or [--theme] To install Prelude theme on XFCE4.\n\t[c] or [--conky] To install and configure Conky.\n\t[r] or [--remove] To remove default apps on Debian.\n\t[m] or [--menu] To change the default start menu and other perferred settings on xfce." >&2
-		exit 1
-		;;
+a | --apps)
+    read -p "This script will install ${#apps[@]} applications. Press enter to continue."
+    i=0
+    for p in "${!apps[@]}"; do
+        echo "$((i))) $p"
+    done | xargs -L3 | column -t
+    install_apps
+    print_results apps
+    ;;
+y | --yocto)
+    read -p "This script will install ${#yocto_libs[@]} applications. Press enter to continue."
+    i=0
+    for p in "${!yocto_libs[@]}"; do
+        echo "$((i))) $p"
+    done | xargs -L3 | column -t
+    install_libraries_yocto
+    print_results yocto_libs
+    ;;
+r | --remove)
+    read -p "This script will remove ${#apps_to_remove[@]} applications. Press enter to continue."
+    i=0
+    for p in "${!apps_to_remove[@]}"; do
+        echo "$((i))) $p"
+    done | xargs -L3 | column -t
+    remove_default_apps
+    print_results apps_to_remove
+    ;;
+p | --plugins)
+    install_vscode_plugs
+    install_vim_plugs
+    print_results vscode_plugs
+    print_results vims
+    ;;
+t | --theme)
+    install_theme
+    ;;
+m | --menu)
+    configure_menu
+    ;;
+c | --conky)
+    configure_conky
+    ;;
+*)
+    echo -e "Script usage: nt[a] or [--apps] To install needed applications.nt[y] or [--yocto] To install application needed by Yocto.nt[p] or [--plugins] To install Visual Code and Vim plugins.nt[t] or [--theme] To install Prelude theme on XFCE4.nt[c] or [--conky] To install and configure Conky.nt[r] or [--remove] To remove default apps on Debian.nt[m] or [--menu] To change the default start menu and other perferred settings on xfce." >&2
+    exit 1
+    ;;
 esac
