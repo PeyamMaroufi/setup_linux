@@ -25,7 +25,7 @@ declare -A apps=(["python3"]="" ["python3-pip"]="" ["synaptic"]="" ["redshift"]=
     ["vim"]="" ["vim-gtk3"]="" ["gparted"]="" ["build-essential"]="" ["make"]="" ["perl"]=""
     ["bluez"]="" ["blueman"]="" ["curl"]="" ["terminator"]="" ["fonts-firacode"]="" ["wget"]=""
 	["gpg"]="" ["apt-transport-https"]="" ["git"]="" ["fonts-ubuntu"]="" ["plank"]="" ["menulibre"]="" ["jq"]="" ["python3-venv"]="" ["faenza-icon-theme"]="" ["hexchat"]="" ["fonts-terminus"]="" ["rsync"]="")
-declare -A apps_to_remove=(["libreoffice-*"]="" ["goldendict-ng"]="" ["exfalso"]="" ["quodlibet"]="" ["fcitx5"]="" ["anthy"]="" ["fortune-mod"]="" ["xiterm+thai"]="")
+declare -A apps_to_remove=(["libreoffice-*"]="" ["goldendict-ng"]="" ["exfalso"]="" ["quodlibet"]="" ["fcitx5"]="" ["anthy"]="" ["fortune-mod"]="" ["cups"]="" ["xiterm+thai"]="")
 declare -A vscode_plugs=(["ms-azuretools.vscode-docker"]="" ["streetsidesoftware.code-spell-checker"]="" ["idleberg.hopscotch"]="" ["ms-python.python"]=""
     ["timonwong.shellcheck"]="" ["redhat.vscode-yaml"]="" ["shardulm94.trailing-spaces"]="")
 declare -A yocto_libs=(["gawk"]="" ["wget"]="" ["git-core"]="" ["diffstat"]="" ["unzip"]="" ["texinfo"]="" ["gcc-multilib"]="" ["build-essential"]="" ["chrpath"]="" ["socat"]="" ["libsdl1.2-dev"]="" ["xterm"]="" ["make"]="" ["xsltproc"]="" ["docbook-utils"]="" ["fop"]="" ["dblatex"]="" ["xmlto"]="" ["autoconf"]="" ["automake"]="" ["libtool"]="" ["libglib2.0-dev"]="" ["python"]="" ["bsdmainutils"]="" ["screen"]="")
@@ -52,7 +52,12 @@ remove_default_apps() {
         	    apps_to_remove[$app]="FAIL"
         fi
 	done
-	sudo apt autoremove -y || true
+	# Remove the unneded languages and such
+	dpkg -l | awk '/^ii  hunspell-/{print $2}' | grep -v -E 'hunspell-en-us|hunspell-en-gb' | xargs sudo apt remove -y
+	dpkg -l | awk '/^ii  aspell-/{print $2}' | grep -v -E 'aspell-en$|aspell-en-us$' | xargs sudo apt remove -y
+	dpkg -l | awk '/^ii  task-/{print $2}' | grep -v -E '^(task-xfce-desktop|task-laptop|task-english-desktop)$' | xargs sudo apt remove -y
+	sudo apt autoremove -y
+
 }
 
 
