@@ -112,6 +112,14 @@ ${voffset 4}${font PizzaDude Bullets:size=11}T${font}   Download: ${alignr}${tot
 ${voffset 4}${font PizzaDude Bullets:size=11}Z${font}   Signal: ${wireless_link_qual wlp112s0}% ${alignr}${wireless_link_bar 8,60 wlp112s0}
 ${voffset 4}${font PizzaDude Bullets:size=11}a${font}   Local Ip: ${alignr}${addr wlp112s0}
 ${else}
+${if_existing /proc/net/route wlp0s20f3}
+${voffset -6}${font PizzaDude Bullets:size=11}O${font}   U: ${upspeed wlp0s20f3}${alignr}${upspeedgraph wlp0s20f3 8,60}
+${voffset 4}${font PizzaDude Bullets:size=11}U${font}   D: ${downspeed wlp0s20f3}${alignr}${downspeedgraph wlp0s20f3 8,60}
+${voffset 4}${font PizzaDude Bullets:size=11}N${font}   Upload: ${alignr}${totalup wlp0s20f3}
+${voffset 4}${font PizzaDude Bullets:size=11}T${font}   Download: ${alignr}${totaldown wlp0s20f3}
+${voffset 4}${font PizzaDude Bullets:size=11}Z${font}   Signal: ${wireless_link_qual wlp0s20f3}% ${alignr}${wireless_link_bar 8,60 wlp0s20f3}
+${voffset 4}${font PizzaDude Bullets:size=11}a${font}   Local Ip: ${alignr}${addr wlp0s20f3}
+${else}
 ${if_existing /proc/net/route enxf8b46a9f883c}
 ${voffset -6}${font PizzaDude Bullets:size=11}O${font}   U: ${upspeed enxf8b46a9f883c}${alignr}${upspeedgraph enxf8b46a9f883c 8,60}
 ${voffset 4}${font PizzaDude Bullets:size=11}U${font}   D: ${downspeed enxf8b46a9f883c}${alignr}${downspeedgraph enxf8b46a9f883c 8,60}
@@ -127,6 +135,7 @@ ${voffset 4}${font PizzaDude Bullets:size=11}T${font}   Download: ${alignr}${tot
 ${voffset 4}${font PizzaDude Bullets:size=11}a${font}   Local Ip: ${alignr}${addr eth1}
 ${else}
 ${font PizzaDude Bullets:size=14}4${font}   Network Unavailable
+${endif}
 ${endif}
 ${endif}
 ${endif}
