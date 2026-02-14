@@ -33,6 +33,7 @@ declare -A vims=(["vim_plugin"]="" ["vim_rc"]="")
 add_sources() {
     version_name=$(grep VERSION_CODENAME /etc/os-release | cut -d'=' -f2)
     sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
+    sudo chattr -i /etc/apt/sources.list
     echo "Backup created at /etc/apt/sources.list.bak"
     read -r -d '' DEBIAN_JSON <<'EOF'
 {
@@ -73,14 +74,15 @@ EOF
 
     echo "$DEBIAN_JSON" |
         awk -v ver="$version_name" '
-    $0 ~ """ver"": [" {flag=1; next}  # Start after the release name
-    flag && /"sources": [/ {next}      # Skip the "sources" line
-    flag && /]/ {flag=0}               # Stop at closing bracket
-    flag && /"/ {
-      gsub(/^[[:space:]]*"|"[,[:space:]]*$/, "", $0)
-      print
-    }' | sudo tee /etc/apt/sources.list
+  $0 ~ """ ver "": [" {flag=1; next}       # Start after the release name
+  flag && /"sources": [/ {next}             # Skip the "sources" line
+  flag && /]/ {flag=0}                       # Stop at closing bracket
+  flag && /"/ {
+    gsub(/^[[:space:]]*"|"[,[:space:]]*$/, "", $0)
+    print
+  }' | sudo tee /etc/apt/sources.list
 
+    sudo chattr i /etc/apt/sources.list
     echo "Done. /etc/apt/sources.list updated."
 }
 install_apps() {
