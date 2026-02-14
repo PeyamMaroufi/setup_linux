@@ -82,7 +82,7 @@ EOF
     print
   }' | sudo tee /etc/apt/sources.list
 
-    sudo chattr i /etc/apt/sources.list
+    sudo chattr +i /etc/apt/sources.list
     echo "Done. /etc/apt/sources.list updated."
 }
 install_apps() {
